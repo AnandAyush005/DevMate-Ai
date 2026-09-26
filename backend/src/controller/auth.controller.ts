@@ -1,0 +1,38 @@
+import type { Request, Response } from "express";
+import { ApiError } from "../utils/api-error.ts";
+import { setAuthCookie } from "../config/auth-cookie.ts";
+import { getAuthenticatedUserId } from "../middlewares/auth.middleware.ts";
+import { loginSchema, registerSchema } from "../schemas/auth.schema.ts";
+import {
+  getCurrentUserService,
+  loginUserService,
+  registerUserService,
+} from "../services/auth.service.ts";
+import { getValidationMessage } from "../utils/validation.ts";
+
+export const register = async (req: Request, res: Response) => {
+  const parsed = registerSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new ApiError(400, "VALIDATION_ERROR", getValidationMessage(parsed.error));
+  }
+
+  const session = await registerUserService(parsed.data);
+  setAuthCookie(res, session.token);
+  return res.status(201).json({ success: true, data: session.user });
+};
+
+export const login = async (req: Request, res: Response) => {
+  const parsed = loginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new ApiError(400, "VALIDATION_ERROR", getValidationMessage(parsed.error));
+  }
+
+  const session = await loginUserService(parsed.data);
+  setAuthCookie(res, session.token);
+  return res.status(200).json({ success: true, data: session.user });
+};
+
+export const getMe = async (req: Request, res: Response) => {
+  const user = await getCurrentUserService(getAuthenticatedUserId(req));
+  return res.status(200).json({ success: true, data: user });
+};

@@ -17,6 +17,8 @@ export default function CreateProjectButton() {
         }
         console.log("Creating project:", projectName);
     }
+    
+    
 
     return (
         <Dialog>

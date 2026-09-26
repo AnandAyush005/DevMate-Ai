@@ -4,14 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "bun run --watch src/server.ts"
+    "dev": "bun run --watch src/server.ts",
+    "test": "node --experimental-transform-types --experimental-test-module-mocks --test \"tests/unit/**/*.test.ts\"",
+    "postinstall": "prisma skills sync || exit 0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@prisma/orm-postgres": "^8.0.0-rc.12",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "express": "^5.2.1"
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "prisma": "^8.0.0-rc.17",
+    "process": "^0.11.10",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "^6.0.3"
   }
 }

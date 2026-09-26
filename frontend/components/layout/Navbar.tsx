@@ -1,5 +1,5 @@
 import Link from "next/link";     
-import CreateProjectButton from "./CreateProjectButton";
+import CreateProjectButton from "../projects/CreateProjectButton";
 
 export default function Navbar () {
     return (
