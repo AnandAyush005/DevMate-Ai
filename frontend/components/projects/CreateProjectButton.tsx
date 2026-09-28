@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { Dialog, DialogTrigger, DialogHeader, DialogContent, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { useCreateProject } from "@/hooks/useProjects";
+import { toast } from "sonner";
 
 
 export default function CreateProjectButton() {
@@ -18,20 +19,28 @@ export default function CreateProjectButton() {
     const handleCreateProject = () => {
 
         if(projectName.trim() === "") {
-            alert("Project name cannot be empty.");
+            toast.error("Project name cannot be empty..")
             return;
         }
         
         mutate({
-           name : projectName,
-           description : projectDescription
+           name : projectName.trim(),
+           description : projectDescription.trim()
         }, {
             onSuccess : () => {
                 setProjectName("");
                 setProjectDescription("");
                 setOpen(false);
+
+                toast.success("Project is sucessfully created");
+            },
+
+            onError : ()=>{
+                toast.error("Error while creating this project..");
             }
-        })
+        }, 
+            
+        )
 
         
     }
