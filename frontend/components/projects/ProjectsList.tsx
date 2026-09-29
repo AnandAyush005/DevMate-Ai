@@ -32,8 +32,19 @@ export default function GetProjects(){
     }
 
     return(
-        <div className="min-w-full flex flex-wrap justify-center">
-            {data.data.length === 0 ? <p>No projects yet..</p> : data.data.map((project : Project) => <ProjectCard project={project} key={project.id} />)}
-        </div>
+        <div className="grid w-full px-16 py-4 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    {data.data.length === 0 ? (
+        <p className="col-span-full text-center text-zinc-400">
+        No projects yet.
+        </p>
+    ) : (
+        data.data.map((project: Project) => (
+        <ProjectCard
+            key={project.id}
+            project={project}
+        />
+        ))
+    )}
+    </div>
     )
 }
