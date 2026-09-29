@@ -1,4 +1,5 @@
 import Navbar from "@/components/layout/Navbar";
+import GetProjects from "@/components/projects/ProjectsList";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
@@ -17,6 +18,8 @@ export default function Home() {
           <Button className="px-10 py-2 font-bold">
             Create Project
           </Button>
+
+          <GetProjects />
 
       </div>
     </div>
