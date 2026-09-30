@@ -29,3 +29,11 @@ export const updateProject = async ({
     });
     return response.data;
 }
+
+export const deleteProject = async ({
+    projectId ,
+} : {projectId : string})=>{
+
+    const response = await api.delete(`/projects/${projectId}`);
+    return response.data
+}

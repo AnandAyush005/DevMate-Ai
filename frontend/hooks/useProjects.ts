@@ -1,4 +1,4 @@
-import { createProjects, getProject, updateProject } from "@/lib/project.api";
+import { createProjects, deleteProject, getProject, updateProject } from "@/lib/project.api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useGetProjects = () =>{
@@ -40,4 +40,20 @@ export const useUpdateProject = () => {
     })
 
     
+}
+
+export const useDeleteProject = () =>{
+
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey : ["projects", "delete"],
+        mutationFn : deleteProject,
+
+        onSuccess : ()=>{
+            queryClient.invalidateQueries({
+                queryKey : ["projects"]
+            })
+        }
+    })
 }

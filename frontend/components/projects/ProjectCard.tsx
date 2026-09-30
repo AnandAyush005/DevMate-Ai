@@ -7,14 +7,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import { CalendarDays, FolderGit2, Pencil, Save } from "lucide-react";
 import { Project } from "./ProjectsList";
 import { useRouter } from "next/navigation";
 import { useState }  from "react";
-import { useUpdateProject } from "@/hooks/useProjects";
+import { useDeleteProject, useUpdateProject } from "@/hooks/useProjects";
 import { Input } from "../ui/input";
 import { toast } from "sonner";
-import  axios  from "axios"
+import  axios  from "axios";
+import { Trash } from "lucide-react"
 
 
 type ProjectCardProps = {
@@ -36,15 +46,21 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [projectName, setProjectName] = useState(project.name);
   const [projectDescription, setProjectDescription] = useState(project.description);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const {mutate, isPending} = useUpdateProject();
+  const {mutate : deleteProject, isPending : isDeleting} = useDeleteProject();
 
   return (
     <Card className="group cursor-pointer border-zinc-800 bg-zinc-950 transition-all duration-200 hover:-translate-y-1 hover:border-zinc-600 hover:shadow-lg " onClick={isEditing ? (e)=>e.stopPropagation : ()=>router.push(`/projects/${project.id}`)}>
       <CardHeader>
 
-        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900">
-          <FolderGit2 className="h-5 w-5 text-zinc-300" />
+        <div className="mb-2 flex h-5 w-full rounded-lg justify-between">
+          <FolderGit2 className=" text-zinc-300  " />
+          <Trash className=" text-zinc-300" onClick={(e)=>{
+            e.stopPropagation();
+            setDeleteDialogOpen(true);
+          }} /> 
         </div>
 
         {isEditing ? 
@@ -123,6 +139,59 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </button>
         }
       </CardContent>
+
+      <Dialog
+  open={deleteDialogOpen}
+  onOpenChange={setDeleteDialogOpen}
+>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Delete Project?</DialogTitle>
+
+      <DialogDescription>
+        Are you sure you want to delete "{project.name}"?
+        This action cannot be undone.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="flex justify-end gap-3">
+      <button
+        className="rounded-md border px-4 py-2"
+        onClick={(e) => (
+          e.stopPropagation(),
+          setDeleteDialogOpen(false))}
+      >
+        Cancel
+      </button>
+
+      <button
+            className="rounded-md bg-red-600 px-4 py-2 text-white"
+            onClick={(e) => {
+              e.stopPropagation(),
+              deleteProject({ projectId: project.id }
+                , {
+                  onSuccess : ()=>{
+                    setDeleteDialogOpen(false);
+                    toast.success("Project is successfully deleted");
+                  }, 
+
+                  onError : (error)=>{
+                    if (axios.isAxiosError(error)) {
+                      toast.error(error.response?.data?.error?.message || "Failed to delete project");
+                      return;
+                    }
+
+                    toast.error("Failed to update project");
+                  }
+                }
+              );
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
     </Card>
   );
 }
