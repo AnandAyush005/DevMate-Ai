@@ -1,6 +1,4 @@
-
-import TestButton from "@/components/projects/AuthTest";
-import { useUpdateProject } from "@/hooks/useProjects";
+import ProjectWorkspace from "../../../components/projects/Project"
 
 export default async function ProjectPage({
   params,
@@ -9,13 +7,11 @@ export default async function ProjectPage({
 }) {
   const { projectId } = await params;
 
+  const id = projectId as string;
 
   return (
     <div>
-      <h1>Project Workspace</h1>
-      <p>Project ID: {projectId}</p>
-
-      <TestButton projectId={projectId} />
+      <ProjectWorkspace projectId={id} />
     </div>
   );
 }

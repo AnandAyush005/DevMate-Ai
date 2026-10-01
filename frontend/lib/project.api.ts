@@ -37,3 +37,8 @@ export const deleteProject = async ({
     const response = await api.delete(`/projects/${projectId}`);
     return response.data
 }
+
+export const getProjectById = async (projectId : string)=>{
+    const response = await api.get(`/projects/${projectId}`);
+    return response.data;
+}
