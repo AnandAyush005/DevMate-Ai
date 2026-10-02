@@ -13,7 +13,7 @@ export type FileTreeNode = {
 type FileTreeProps = {
   node: FileTreeNode;
   level?: number;
-  onSelectedFile: (file: { name: string; content: string }) => void;
+  onSelectedFile: ( fileName: string) => void;
   selectedFile?: { name: string; content: string };
 };
 
@@ -26,7 +26,7 @@ export default function FileTree({ node, level = 0, onSelectedFile, selectedFile
       <div
         className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-zinc-800 group ${selectedFile?.name === node.name ? 'bg-zinc-800 text-white' : ''}`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
-        onClick={() => onSelectedFile({ name: node.name, content: node.content || "" })}
+        onClick={() => onSelectedFile(node.name)}
       >
         <File className={`h-4 w-4 shrink-0 text-zinc-400 group-hover:text-white ` }/>
         <span className={`truncate group-hover:text-white `}>{node.name}</span>

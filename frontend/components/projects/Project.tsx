@@ -6,6 +6,7 @@ import { fileTreeValues } from "./constants";
 import FileTree from "./FileTree";
 import { useState } from "react";
 import { FileTreeNode } from "./FileTree";
+import CodeEditor from "./CodeEditor";
 
 export default function ProjectWorkspace({
   projectId,
@@ -18,6 +19,21 @@ export default function ProjectWorkspace({
     name : "",
     content : ""
   });
+
+  const [files, setFiles] = useState([{
+    name: "Button.tsx",
+    content: "<button>Click me</button>"
+  },{
+    name: "Navbar.tsx",
+    content: "<nav>Navbar</nav>"
+  }]);
+
+  const handleFileSelect = (fileName: string) => {
+    const file = files.find((f) => f.name === fileName);
+    if (file) {
+      setSelectedFile(file);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -76,8 +92,9 @@ export default function ProjectWorkspace({
                 <FileTree
                   key={node.name}
                   node={node as FileTreeNode}
-                  onSelectedFile={setSelectedFile}
+                  onSelectedFile={handleFileSelect}
                   selectedFile={selectedFile}
+                
                 />
               ))}
           </div>
@@ -94,9 +111,7 @@ export default function ProjectWorkspace({
 
           {/* Code Editor */}
           <div className="min-h-0 flex-1 overflow-auto p-4">
-            <p className="text-sm text-zinc-500">
-              {selectedFile.content || "No content to display"}
-            </p>
+            <CodeEditor selectedFile={selectedFile} setSelectedFile={setSelectedFile} files={files} setFiles={setFiles} />
           </div>
 
           {/* AI Input */}
