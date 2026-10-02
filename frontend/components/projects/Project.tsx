@@ -37,7 +37,7 @@ export default function ProjectWorkspace({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
         <p>Loading project...</p>
       </div>
     );
@@ -46,7 +46,7 @@ export default function ProjectWorkspace({
   if (isError) {
     if (axios.isAxiosError(error)) {
       return (
-        <div className="flex min-h-screen items-center justify-center">
+        <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
           <p>
             {error.response?.data?.error?.message ||
               "Failed to load project"}
@@ -56,7 +56,7 @@ export default function ProjectWorkspace({
     }
 
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
         <p>Failed to load project</p>
       </div>
     );
@@ -65,7 +65,7 @@ export default function ProjectWorkspace({
   const project = data?.data;
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden">
+    <div className="dark flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
       {/* Header */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div>
