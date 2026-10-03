@@ -7,6 +7,7 @@ import FileTree from "./FileTree";
 import { useState } from "react";
 import { FileTreeNode } from "./FileTree";
 import CodeEditor from "./CodeEditor";
+import { X } from "lucide-react";
 
 export default function ProjectWorkspace({
   projectId,
@@ -28,11 +29,32 @@ export default function ProjectWorkspace({
     content: "<nav>Navbar</nav>"
   }]);
 
+  const [openFiles, setOpenFiles] = useState<string[]>([]);
+
   const handleFileSelect = (fileName: string) => {
     const file = files.find((f) => f.name === fileName);
     if (file) {
       setSelectedFile(file);
+      if(openFiles.indexOf(fileName) === -1){
+        setOpenFiles((prev) => [...prev, fileName]);
+      }
     }
+  }
+
+  const handleFileClose = (fileName: string) => {
+    if (selectedFile.name === fileName) {
+      const remainingFiles = openFiles.filter((f) => f !== fileName);
+      if (remainingFiles.length > 0) {
+        const newSelectedFile = files.find((f) => f.name === remainingFiles[0]);
+        if (newSelectedFile) {
+          setSelectedFile(newSelectedFile);
+        }
+      } else {
+        setSelectedFile({ name: "", content: "" });
+      }
+    }
+    setOpenFiles((prev) => prev.filter((f) => f !== fileName));
+
   }
 
   if (isLoading) {
@@ -104,9 +126,23 @@ export default function ProjectWorkspace({
         <section className="flex min-h-0 flex-1 flex-col">
           {/* Editor Header */}
           <div className="flex h-10 shrink-0 items-center border-b px-4">
-            <span className="text-sm text-zinc-400">
-              {selectedFile.name || "No file selected"}
-            </span>
+           
+              {openFiles.map((fileName) => (
+                <span
+                  key={fileName}
+                  className={`cursor-pointer hover:underline p-2 border-r flex items-center gap-2 ${selectedFile.name === fileName ? 'bg-muted text-foreground' : 'text-zinc-400'}`}
+                  onClick={() => handleFileSelect(fileName)}
+                >
+                  {fileName}
+                  <X className="hover:opacity-50 size-4 text-white" onClick={(e) => {
+                    e.stopPropagation();
+                    handleFileClose(fileName);
+                  }} />
+
+
+                </span>
+              ))}
+            
           </div>
 
           {/* Code Editor */}
