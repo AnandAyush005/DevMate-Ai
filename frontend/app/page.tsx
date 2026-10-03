@@ -1,6 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
+import CreateProjectButton from "@/components/projects/CreateProjectButton";
 import GetProjects from "@/components/projects/ProjectsList";
-import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -15,9 +15,7 @@ export default function Home() {
             Your AI-powered developer workspace
           </p>
 
-          <Button className="px-10 py-2 font-bold">
-            Create Project
-          </Button>
+          <CreateProjectButton />
 
           <GetProjects />
 

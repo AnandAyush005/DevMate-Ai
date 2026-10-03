@@ -3,6 +3,14 @@ import { authConfig } from "./auth.ts";
 import { env } from "./env.ts";
 
 export const setAuthCookie = (res: Response, token: string) => {
+
+  if(token === ""){
+    res.clearCookie(authConfig.cookieName, {
+      path : "/"
+    });
+    return;
+  }
+
   res.cookie(authConfig.cookieName, token, {
     httpOnly: true,
     secure: env.cookieSecure,

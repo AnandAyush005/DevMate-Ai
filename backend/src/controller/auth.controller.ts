@@ -36,3 +36,11 @@ export const getMe = async (req: Request, res: Response) => {
   const user = await getCurrentUserService(getAuthenticatedUserId(req));
   return res.status(200).json({ success: true, data: user });
 };
+
+export const logout = async (_req : Request, res : Response) => {
+  setAuthCookie(res, "");
+  return res.status(200).json({
+    success : true,
+    data : "User is logged out"
+  })
+}
