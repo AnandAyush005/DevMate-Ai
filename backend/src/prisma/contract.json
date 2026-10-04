@@ -8,6 +8,10 @@
       "model": "Project",
       "namespace": "public"
     },
+    "ProjectFile": {
+      "model": "ProjectFile",
+      "namespace": "public"
+    },
     "User": {
       "model": "User",
       "namespace": "public"
@@ -63,6 +67,21 @@
               }
             },
             "relations": {
+              "files": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "projectId"
+                  ]
+                },
+                "to": {
+                  "model": "ProjectFile",
+                  "namespace": "public"
+                }
+              },
               "user": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -103,6 +122,114 @@
               },
               "namespaceId": "public",
               "table": "Project"
+            }
+          },
+          "ProjectFile": {
+            "fields": {
+              "content": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "language": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "path": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "projectId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "project": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "projectId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Project",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "content": {
+                  "column": "content"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "language": {
+                  "column": "language"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "path": {
+                  "column": "path"
+                },
+                "projectId": {
+                  "column": "projectId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ProjectFile"
             }
           },
           "User": {
@@ -277,6 +404,92 @@
                 }
               ]
             },
+            "ProjectFile": {
+              "columns": {
+                "content": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "language": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "path": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "projectId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "projectId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ProjectFile"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Project"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "projectId"
+                  ],
+                  "name": "ProjectFile_projectId_idx_a96e4d92",
+                  "prefix": "ProjectFile_projectId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "projectId",
+                    "path"
+                  ]
+                }
+              ]
+            },
             "User": {
               "columns": {
                 "createdAt": {
@@ -331,10 +544,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d1b676a7e98874a4576c6685e10990fb05127b45abd0298f67d54ed8fb932bb2"
+    "storageHash": "c4713d10b5b938b5a84d909225f57103c9351cb7f6552fe7f3bb416315a55268"
   },
   "execution": {
-    "executionHash": "77b086c9dce916fa4a45c047dd0d59c635386e166f73f369e58cdf7bf5707859",
+    "executionHash": "57ce3e903dd8f74d5f2e07d53983056aa42cf5317cbd7ad44ea79e7e82ea0a0f",
     "mutations": {
       "defaults": [
         {
@@ -372,6 +585,43 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "Project"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "createdAt",
+            "namespace": "public",
+            "table": "ProjectFile"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "ProjectFile"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "ProjectFile"
           }
         },
         {

@@ -5,11 +5,14 @@ import { createProjectSchema, projectIdSchema, updateProjectSchema } from "../sc
 import {
   createProjectService,
   deleteProjectService,
+  getProjectFilesService,
   getProjectService,
   getProjectsService,
   updateProjectService,
+  createProjectFileService
 } from "../services/project.service.ts";
 import { getValidationMessage } from "../utils/validation.ts";
+import { createProjectFileSchema } from "../schemas/project-file.schema.ts";
 
 export const createProject = async (req: Request, res: Response) => {
   const parsed = createProjectSchema.safeParse(req.body);
@@ -64,3 +67,37 @@ export const deleteProject = async (req: Request, res: Response) => {
   await deleteProjectService(getAuthenticatedUserId(req), projectId.data);
   return res.status(200).json({ success: true, data: { id: projectId.data } });
 };
+
+export const getProjectFiles = async (req: Request, res: Response) => {
+  const projectId = projectIdSchema.safeParse(req.params.projectId);
+  if (!projectId.success) {
+    throw new ApiError(400, "VALIDATION_ERROR", getValidationMessage(projectId.error));
+  }
+
+  const projectFiles = await getProjectFilesService(getAuthenticatedUserId(req), projectId.data);
+  return res.status(200).json({ success: true, data: { files: [...projectFiles] } });
+};
+
+export const createProjectFile = async(req:Request, res : Response)=>{
+
+  const projectId = projectIdSchema.safeParse(req.params.projectId);
+  if (!projectId.success) {
+    throw new ApiError(400, "VALIDATION_ERROR", getValidationMessage(projectId.error));
+  }
+
+  const file = createProjectFileSchema.safeParse(req.body);
+  
+  if(!file.success){
+    throw new ApiError(400, "VALIDATION_ERROR", getValidationMessage(file.error));
+  }
+
+  const createdFile = await createProjectFileService(getAuthenticatedUserId(req), projectId.data, file.data);
+
+  return res.status(201).json({
+    success : true,
+    data : createdFile
+  })
+
+}
+
+

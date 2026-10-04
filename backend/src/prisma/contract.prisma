@@ -17,6 +17,22 @@ model Project {
   user        User                       @relation(fields:[userId], references:[id], onDelete: Cascade)
   createdAt   temporal.createdAtString()
   updatedAt   temporal.updatedAtString()
+  files       ProjectFile[]
 
   @@unique([userId, name])  
+}
+
+model ProjectFile {
+  id          String                @id @default(uuid())
+  name        String
+  path        String
+  content     String
+  language    String
+  projectId   String
+  project     Project                 @relation(fields:[projectId], references:[id], onDelete : Cascade)
+  createdAt   temporal.createdAtString()
+  updatedAt   temporal.updatedAtString()
+
+  @@unique([projectId, path])
+
 }
