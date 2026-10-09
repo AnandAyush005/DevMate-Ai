@@ -52,3 +52,8 @@ export const getProjectFileContent = async(projectId : string, fileId : string)=
     const response = await api.get(`/projects/${projectId}/files/${fileId}`);
     return response.data;
 }
+
+export const updateProjectFileContent = async(projectId:string, fileId : string, content : string)=>{
+    const response = await api.patch(`/projects/${projectId}/files/${fileId}`,{content});
+    return response.data;
+}

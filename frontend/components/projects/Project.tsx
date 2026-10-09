@@ -3,11 +3,13 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner"
 
 import { useGetProjectbyId } from "@/hooks/useGetProjects";
 import {
   useGetProjectFiles,
   useGetProjectFileContent,
+  useUpdateProjectFile,
 } from "@/hooks/useProjects";
 
 import FileTree from "./FileTree";
@@ -142,6 +144,27 @@ export default function ProjectWorkspace({
     );
   };
 
+const { mutate, isPending } = useUpdateProjectFile(
+  projectId,
+  selectedFile?.id ?? ""
+);
+
+  const handleFileSave = () => {
+    if (!selectedFile) {
+      toast.error("Please select a file first");
+      return;
+    }
+
+    mutate(selectedFile.content, {
+      onSuccess: () => {
+        toast.success("File saved successfully");
+      },
+      onError: () => {
+        toast.error("Failed to save file");
+      },
+    });
+  };
+
   const handleFileClose = (fileId: string) => {
     const remainingFiles = openFiles.filter(
       (id) => id !== fileId
@@ -193,15 +216,27 @@ export default function ProjectWorkspace({
 
   return (
     <div className="dark flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-        <h1 className="font-semibold">
-          {project?.name || "Untitled Project"}
-        </h1>
+   
+    <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+      <h1 className="font-semibold">
+        {project?.name || "Untitled Project"}
+      </h1>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleFileSave}
+          disabled={!selectedFile || isPending}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isPending ? "Saving..." : "Save"}
+        </button>
 
         <button className="rounded-md border px-3 py-1.5 text-sm">
           Settings
         </button>
-      </header>
+      </div>
+    </header>
+
 
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <aside className="flex h-64 w-full shrink-0 flex-col border-b lg:h-full lg:w-64 lg:border-b-0 lg:border-r">

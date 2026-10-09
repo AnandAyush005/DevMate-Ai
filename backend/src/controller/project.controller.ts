@@ -10,10 +10,12 @@ import {
   getProjectsService,
   updateProjectService,
   createProjectFileService,
-  getProjectFileContentService
+  getProjectFileContentService,
+  updateProjectFileService
 } from "../services/project.service.ts";
 import { getValidationMessage } from "../utils/validation.ts";
-import { createProjectFileSchema, getProjectFileContentSchema } from "../schemas/project-file.schema.ts";
+import { createProjectFileSchema, getProjectFileContentSchema, updateProjectFileSchema } from "../schemas/project-file.schema.ts";
+import { success } from "zod";
 
 export const createProject = async (req: Request, res: Response) => {
   const parsed = createProjectSchema.safeParse(req.body);
@@ -127,3 +129,34 @@ export const getProjectFileContent = async (
     data: fileData,
   });
 };
+
+export const updateProjectFileContent = async(req : Request, res : Response)=>{
+
+  const result = getProjectFileContentSchema.safeParse(req.params);
+
+  if (!result.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(result.error)
+    );
+  }
+
+  const data = updateProjectFileSchema.safeParse(req.body);
+
+  if (!data.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(data.error)
+    );
+  }
+
+  const updateProjectFile = await updateProjectFileService(getAuthenticatedUserId(req), result.data.projectId, result.data.fileId, data.data.content);
+
+  return res.status(200).json({
+    success : true,
+    data : updateProjectFile
+  })
+
+}

@@ -167,3 +167,34 @@ export const getProjectFileContentService = async (
 
   return file;
 };
+
+export const updateProjectFileService = async(userId : string, projectId : string, fileId : string, content : string)=>{
+
+  const getProject = await db.orm.public.Project
+  .where({
+    id : projectId,
+    userId : userId
+  }).first();
+
+  if(!getProject){
+    throw new ApiError(404, 'PROJECT_NOT_FOUND', 'Project not found');
+  }
+
+  const update = await db.orm.public.ProjectFile
+  .where({
+    id : fileId,
+    projectId
+  })
+  .update({
+    content 
+  })
+  
+  if(!update){
+    throw new ApiError(404, 'FILE_NOT_FOUND', 'file not found');
+  }
+
+  return {
+    id: fileId,
+    content,
+  };
+}

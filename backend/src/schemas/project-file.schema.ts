@@ -11,3 +11,7 @@ export const getProjectFileContentSchema = z.object({
     projectId : z.uuid("Not a valid project id").trim(),
     fileId : z.uuid("Not a valid file id").trim()
 })
+
+export const updateProjectFileSchema = z.object({
+    content : z.string()
+})

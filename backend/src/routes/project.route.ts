@@ -8,6 +8,7 @@ import {
   getProjectFiles,
   getProjects,
   updateProject,
+  updateProjectFileContent
 } from "../controller/project.controller.ts";
 import { authenticate } from "../middlewares/auth.middleware.ts";
 import { verifyRequestOrigin } from "../middlewares/origin.middleware.ts";
@@ -22,6 +23,12 @@ projectRouter.post("/:projectId/files", verifyRequestOrigin, authenticate, creat
 projectRouter.patch("/:projectId", verifyRequestOrigin, authenticate, updateProject);
 projectRouter.delete("/:projectId", verifyRequestOrigin, authenticate, deleteProject);
 projectRouter.get('/:projectId/files/:fileId', verifyRequestOrigin, authenticate, getProjectFileContent);  
+projectRouter.patch(
+  "/:projectId/files/:fileId",
+  verifyRequestOrigin,
+  authenticate,
+  updateProjectFileContent
+);
 
 
 export default projectRouter;
