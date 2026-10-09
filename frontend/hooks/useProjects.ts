@@ -1,4 +1,4 @@
-import { createProjects, deleteProject, getProject, updateProject } from "@/lib/project.api";
+import { createProjects, deleteProject, getProject, getProjectFileContent, getProjectFiles, updateProject } from "@/lib/project.api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useGetProjects = () =>{
@@ -55,5 +55,21 @@ export const useDeleteProject = () =>{
                 queryKey : ["projects"]
             })
         }
+    })
+}
+
+export const useGetProjectFiles = (projectId: string)=>{
+
+    return useQuery({
+        queryKey : ["projects", projectId, "files"],
+        queryFn : () => getProjectFiles(projectId)
+    })
+}
+
+export const useGetProjectFileContent = (projectId : string, fileId : string)=>{
+    return useQuery({
+        queryKey : ["projects", projectId, "files", fileId],
+        queryFn : () => getProjectFileContent(projectId, fileId),
+        enabled : !!projectId && !!fileId
     })
 }

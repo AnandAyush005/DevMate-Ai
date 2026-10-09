@@ -42,3 +42,13 @@ export const getProjectById = async (projectId : string)=>{
     const response = await api.get(`/projects/${projectId}`);
     return response.data;
 }
+
+export const getProjectFiles = async (projectId : string)=>{
+    const response = await api.get(`/projects/${projectId}/files`);
+    return response.data;
+}
+
+export const getProjectFileContent = async(projectId : string, fileId : string)=>{
+    const response = await api.get(`/projects/${projectId}/files/${fileId}`);
+    return response.data;
+}

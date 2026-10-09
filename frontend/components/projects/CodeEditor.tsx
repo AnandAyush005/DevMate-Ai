@@ -4,48 +4,65 @@ import { Editor } from "@monaco-editor/react";
 import type { Dispatch, SetStateAction } from "react";
 import { getLanguageFromFileName } from "./language";
 
-type CodeEditorState = Dispatch<
-  SetStateAction<{ name: string; content: string }>
->;
+type WorkspaceFile = {
+  id: string;
+  name: string;
+  path: string;
+  content: string;
+};
 
 type CodeEditorProps = {
-selectedFile: { name: string; content: string };
-  setSelectedFile: CodeEditorState;
-  files: { name: string; content: string }[];
-  setFiles: Dispatch<SetStateAction<{ name: string; content: string }[]>>;
+  selectedFile: WorkspaceFile | null;
+  setSelectedFile: Dispatch<SetStateAction<WorkspaceFile | null>>;
+  files: WorkspaceFile[];
+  setFiles: Dispatch<SetStateAction<WorkspaceFile[]>>;
 };
 
 export default function CodeEditor({
-  selectedFile ,
+  selectedFile,
   setSelectedFile,
   files,
   setFiles,
 }: CodeEditorProps) {
+  if (!selectedFile) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
+        Select a file to start editing
+      </div>
+    );
+  }
 
   return (
-
     <div className="h-full w-full">
       <Editor
         height="100%"
         width="100%"
         theme="hc-black"
         value={selectedFile.content}
-        language={getLanguageFromFileName(selectedFile.name) }
-        onChange={
-            (value)=>{
+        language={getLanguageFromFileName(selectedFile.name)}
+        onChange={(value) => {
+          const content = value ?? "";
 
-                setSelectedFile((prev) => ({
-                    ...prev,
-                    content: value ?? "",
-                }));
+          setSelectedFile((prev) => {
+            if (!prev) return prev;
 
-                setFiles((prevFiles) =>
-                    prevFiles.map((f) =>
-                        f.name === selectedFile.name ? { ...f, content: value ?? "" } : f
-                    )
-                );
-            }
-        }
+            return {
+              ...prev,
+              content,
+            };
+          });
+
+          setFiles((prevFiles) =>
+            prevFiles.map((file) =>
+              file.id === selectedFile.id
+                ? {
+                    ...file,
+                    content,
+                  }
+                : file
+            )
+          );
+        }}
       />
     </div>
   );

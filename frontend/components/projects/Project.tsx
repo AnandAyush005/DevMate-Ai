@@ -1,61 +1,163 @@
 "use client";
 
 import axios from "axios";
-import { useGetProjectbyId } from "@/hooks/useGetProjects";
-import { fileTreeValues } from "./constants";
-import FileTree from "./FileTree";
-import { useState } from "react";
-import { FileTreeNode } from "./FileTree";
-import CodeEditor from "./CodeEditor";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+
+import { useGetProjectbyId } from "@/hooks/useGetProjects";
+import {
+  useGetProjectFiles,
+  useGetProjectFileContent,
+} from "@/hooks/useProjects";
+
+import FileTree from "./FileTree";
+import type { FileTreeNode } from "./FileTree";
+import CodeEditor from "./CodeEditor";
+
+type WorkspaceFile = {
+  id: string;
+  name: string;
+  path: string;
+  content: string;
+};
+
+type FileSelection = {
+  id: string;
+  name: string;
+  path: string;
+};
 
 export default function ProjectWorkspace({
   projectId,
 }: {
   projectId: string;
 }) {
-  const { data, isLoading, isError, error } = useGetProjectbyId(projectId);
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+  } = useGetProjectbyId(projectId);
 
-  const [selectedFile, setSelectedFile] = useState({
-    name : "",
-    content : ""
-  });
+  const {
+    data: projectFilesResponse,
+    isLoading: isFilesLoading,
+  } = useGetProjectFiles(projectId);
 
-  const [files, setFiles] = useState([{
-    name: "Button.tsx",
-    content: "<button>Click me</button>"
-  },{
-    name: "Navbar.tsx",
-    content: "<nav>Navbar</nav>"
-  }]);
+  const projectFiles = projectFilesResponse?.data?.files;
 
+  const [files, setFiles] = useState<WorkspaceFile[]>([]);
+  const [selectedFile, setSelectedFile] =
+    useState<WorkspaceFile | null>(null);
   const [openFiles, setOpenFiles] = useState<string[]>([]);
+  const [loadedFileIds, setLoadedFileIds] = useState<string[]>([]);
 
-  const handleFileSelect = (fileName: string) => {
-    const file = files.find((f) => f.name === fileName);
-    if (file) {
-      setSelectedFile(file);
-      if(openFiles.indexOf(fileName) === -1){
-        setOpenFiles((prev) => [...prev, fileName]);
-      }
+  // Initialize file metadata without replacing existing local content.
+  useEffect(() => {
+    if (!projectFiles) return;
+
+    if (projectFiles.length === 0) {
+      setFiles([]);
+      setSelectedFile(null);
+      setOpenFiles([]);
+      setLoadedFileIds([]);
+      return;
     }
-  }
 
-  const handleFileClose = (fileName: string) => {
-    if (selectedFile.name === fileName) {
-      const remainingFiles = openFiles.filter((f) => f !== fileName);
-      if (remainingFiles.length > 0) {
-        const newSelectedFile = files.find((f) => f.name === remainingFiles[0]);
-        if (newSelectedFile) {
-          setSelectedFile(newSelectedFile);
-        }
-      } else {
-        setSelectedFile({ name: "", content: "" });
-      }
+    setFiles((currentFiles) =>
+      projectFiles.map((file: {
+        id: string;
+        name: string;
+        path: string;
+      }) => {
+        const existingFile = currentFiles.find(
+          (currentFile) => currentFile.id === file.id
+        );
+
+        return {
+          id: file.id,
+          name: file.name,
+          path: file.path,
+          content: existingFile?.content ?? "",
+        };
+      })
+    );
+  }, [projectFiles]);
+
+  const selectedFileId = selectedFile?.id ?? "";
+
+  // The query is enabled only when a file is selected.
+  const {
+    data: fileContentResponse,
+    isLoading: isFileContentLoading,
+    isError: isFileContentError,
+  } = useGetProjectFileContent(projectId, selectedFileId);
+
+  // Load content once per file; never overwrite edits already in local state.
+  useEffect(() => {
+    const content = fileContentResponse?.data?.content;
+
+    if (
+      content === undefined ||
+      !selectedFileId ||
+      loadedFileIds.includes(selectedFileId)
+    ) {
+      return;
     }
-    setOpenFiles((prev) => prev.filter((f) => f !== fileName));
 
-  }
+    setFiles((currentFiles) =>
+      currentFiles.map((file) =>
+        file.id === selectedFileId
+          ? { ...file, content }
+          : file
+      )
+    );
+
+    setSelectedFile((currentFile) =>
+      currentFile?.id === selectedFileId
+        ? { ...currentFile, content }
+        : currentFile
+    );
+
+    setLoadedFileIds((current) =>
+      current.includes(selectedFileId)
+        ? current
+        : [...current, selectedFileId]
+    );
+  }, [fileContentResponse, selectedFileId, loadedFileIds]);
+
+  const handleFileSelect = (file: FileSelection) => {
+    const existingFile = files.find(
+      (workspaceFile) => workspaceFile.id === file.id
+    );
+
+    if (!existingFile) return;
+
+    setSelectedFile(existingFile);
+
+    setOpenFiles((current) =>
+      current.includes(file.id)
+        ? current
+        : [...current, file.id]
+    );
+  };
+
+  const handleFileClose = (fileId: string) => {
+    const remainingFiles = openFiles.filter(
+      (id) => id !== fileId
+    );
+
+    if (selectedFile?.id === fileId) {
+      const nextFileId = remainingFiles[0];
+      const nextFile = files.find(
+        (file) => file.id === nextFileId
+      );
+
+      setSelectedFile(nextFile ?? null);
+    }
+
+    setOpenFiles(remainingFiles);
+  };
 
   if (isLoading) {
     return (
@@ -66,91 +168,129 @@ export default function ProjectWorkspace({
   }
 
   if (isError) {
-    if (axios.isAxiosError(error)) {
-      return (
-        <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
-          <p>
-            {error.response?.data?.error?.message ||
-              "Failed to load project"}
-          </p>
-        </div>
-      );
-    }
-
     return (
       <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
-        <p>Failed to load project</p>
+        <p>
+          {axios.isAxiosError(error)
+            ? error.response?.data?.error?.message ??
+              "Failed to load project"
+            : "Failed to load project"}
+        </p>
       </div>
     );
   }
 
   const project = data?.data;
 
+  const fileTree: FileTreeNode[] = (projectFiles ?? []).map(
+    (file: { id: string; name: string; path: string }) => ({
+      type: "file",
+      id: file.id,
+      name: file.name,
+      path: file.path,
+    })
+  );
+
   return (
     <div className="dark flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
-      {/* Header */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-        <div>
-          <h1 className="font-semibold">
-            {project?.name || "Untitled Project"}
-          </h1>
-        </div>
+        <h1 className="font-semibold">
+          {project?.name || "Untitled Project"}
+        </h1>
 
         <button className="rounded-md border px-3 py-1.5 text-sm">
           Settings
         </button>
       </header>
 
-      {/* Workspace */}
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* File Explorer */}
         <aside className="flex h-64 w-full shrink-0 flex-col border-b lg:h-full lg:w-64 lg:border-b-0 lg:border-r">
           <div className="flex h-10 items-center border-b px-4">
             <span className="text-sm font-medium">Files</span>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
-              {fileTreeValues.map((node) => (
+            {isFilesLoading ? (
+              <p className="px-2 text-sm text-zinc-500">
+                Loading files...
+              </p>
+            ) : fileTree.length === 0 ? (
+              <p className="px-2 text-sm text-zinc-500">
+                No files yet.
+              </p>
+            ) : (
+              fileTree.map((node) => (
                 <FileTree
-                  key={node.name}
-                  node={node as FileTreeNode}
+                  key={node.id}
+                  node={node}
                   onSelectedFile={handleFileSelect}
-                  selectedFile={selectedFile}
-                
+                  selectedFile={selectedFile ?? undefined}
                 />
-              ))}
+              ))
+            )}
           </div>
         </aside>
 
-        {/* Editor Area */}
         <section className="flex min-h-0 flex-1 flex-col">
-          {/* Editor Header */}
           <div className="flex h-10 shrink-0 items-center border-b px-4">
-           
-              {openFiles.map((fileName) => (
-                <span
-                  key={fileName}
-                  className={`cursor-pointer hover:underline p-2 border-r flex items-center gap-2 ${selectedFile.name === fileName ? 'bg-muted text-foreground' : 'text-zinc-400'}`}
-                  onClick={() => handleFileSelect(fileName)}
+            {openFiles.map((fileId) => {
+              const file = files.find(
+                (item) => item.id === fileId
+              );
+
+              if (!file) return null;
+
+              return (
+                <div
+                  key={file.id}
+                  className={`flex cursor-pointer items-center gap-2 border-r p-2 hover:underline ${
+                    selectedFile?.id === file.id
+                      ? "bg-muted text-foreground"
+                      : "text-zinc-400"
+                  }`}
+                  onClick={() => handleFileSelect(file)}
                 >
-                  {fileName}
-                  <X className="hover:opacity-50 size-4 text-white" onClick={(e) => {
-                    e.stopPropagation();
-                    handleFileClose(fileName);
-                  }} />
+                  <span>{file.name}</span>
 
-
-                </span>
-              ))}
-            
+                  <X
+                    className="size-4 hover:opacity-50"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleFileClose(file.id);
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
 
-          {/* Code Editor */}
-          <div className="min-h-0 flex-1 overflow-auto p-4">
-            <CodeEditor selectedFile={selectedFile} setSelectedFile={setSelectedFile} files={files} setFiles={setFiles} />
+          <div className="min-h-0 flex-1 overflow-hidden p-4">
+            {selectedFile &&
+            !loadedFileIds.includes(selectedFile.id) &&
+            isFileContentLoading ? (
+              <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+                Loading {selectedFile.name}...
+              </div>
+            ) : isFileContentError &&
+              selectedFile &&
+              !loadedFileIds.includes(selectedFile.id) ? (
+              <div className="flex h-full items-center justify-center text-sm text-red-400">
+                Failed to load file content. Select the file again to retry.
+              </div>
+            ) : selectedFile ? (
+              <CodeEditor
+                selectedFile={selectedFile}
+                setSelectedFile={setSelectedFile}
+                files={files}
+                setFiles={setFiles}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+                Select a file to start editing
+              </div>
+            )}
           </div>
 
-          {/* AI Input */}
           <div className="shrink-0 border-t p-3">
             <div className="flex items-center gap-2">
               <input

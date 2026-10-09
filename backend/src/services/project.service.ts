@@ -96,7 +96,10 @@ export const getProjectFilesService = async(userId : string, projectId : string)
   }
 
   const projectFiles = await db.orm.public.ProjectFile
-  .where({projectId : projectId}).orderBy((project) => project.path.asc()).all();
+    .where({ projectId })
+    .select("id", "name", "path", "language")
+    .orderBy((file) => file.path.asc())
+    .all();
 
 
   return projectFiles;
@@ -131,3 +134,36 @@ export const createProjectFileService = async(userId : string, projectId : strin
     throw error;
   }
 }
+
+export const getProjectFileContentService = async (
+  userId: string,
+  projectId: string,
+  fileId: string
+) => {
+  const project = await db.orm.public.Project
+    .where({ userId, id: projectId })
+    .first();
+
+  if (!project) {
+    throw new ApiError(
+      404,
+      "PROJECT_NOT_FOUND",
+      "Project not found."
+    );
+  }
+
+  const file = await db.orm.public.ProjectFile
+    .where({ projectId, id: fileId })
+    .select("content")
+    .first();
+
+  if (!file) {
+    throw new ApiError(
+      404,
+      "FILE_NOT_FOUND",
+      "File not found."
+    );
+  }
+
+  return file;
+};

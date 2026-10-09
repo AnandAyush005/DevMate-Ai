@@ -4,6 +4,7 @@ import {
   createProjectFile,
   deleteProject,
   getProject,
+  getProjectFileContent,
   getProjectFiles,
   getProjects,
   updateProject,
@@ -20,6 +21,7 @@ projectRouter.get("/:projectId", authenticate, getProject);
 projectRouter.post("/:projectId/files", verifyRequestOrigin, authenticate, createProjectFile)
 projectRouter.patch("/:projectId", verifyRequestOrigin, authenticate, updateProject);
 projectRouter.delete("/:projectId", verifyRequestOrigin, authenticate, deleteProject);
+projectRouter.get('/:projectId/files/:fileId', verifyRequestOrigin, authenticate, getProjectFileContent);  
 
 
 export default projectRouter;

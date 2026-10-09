@@ -6,3 +6,8 @@ export const createProjectFileSchema = z.object({
     content : z.string(),
     language : z.string().trim().min(1, "Length of language must be greater than or equal then 1").max(50, "Length of language must be lesser than or equal to 50"),
 })
+
+export const getProjectFileContentSchema = z.object({
+    projectId : z.uuid("Not a valid project id").trim(),
+    fileId : z.uuid("Not a valid file id").trim()
+})
