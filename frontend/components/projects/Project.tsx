@@ -47,6 +47,10 @@ export default function ProjectWorkspace({
   } = useGetProjectFiles(projectId);
 
   const projectFiles = projectFilesResponse?.data?.files;
+  
+  const [savedContents, setSavedContents] = useState<
+    Record<string, string>
+  >({});
 
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [selectedFile, setSelectedFile] =
@@ -86,6 +90,7 @@ export default function ProjectWorkspace({
     );
   }, [projectFiles]);
 
+
   const selectedFileId = selectedFile?.id ?? "";
 
   // The query is enabled only when a file is selected.
@@ -98,6 +103,11 @@ export default function ProjectWorkspace({
   // Load content once per file; never overwrite edits already in local state.
   useEffect(() => {
     const content = fileContentResponse?.data?.content;
+
+    setSavedContents((current) => ({
+      ...current,
+      [selectedFileId]: content,
+    }));
 
     if (
       content === undefined ||
@@ -149,16 +159,26 @@ const { mutate, isPending } = useUpdateProjectFile(
   selectedFile?.id ?? ""
 );
 
+
   const handleFileSave = () => {
     if (!selectedFile) {
       toast.error("Please select a file first");
       return;
     }
 
-    mutate(selectedFile.content, {
+    const fileId = selectedFile.id;
+    const contentToSave = selectedFile.content;
+
+    mutate(contentToSave, {
       onSuccess: () => {
+        setSavedContents((current) => ({
+          ...current,
+          [fileId]: contentToSave,
+        }));
+
         toast.success("File saved successfully");
       },
+
       onError: () => {
         toast.error("Failed to save file");
       },
@@ -285,7 +305,19 @@ const { mutate, isPending } = useUpdateProjectFile(
                   }`}
                   onClick={() => handleFileSelect(file)}
                 >
-                  <span>{file.name}</span>
+                <span className="flex items-center gap-2">
+                  {file.name}
+
+                  {savedContents[file.id] !== undefined &&
+                    file.content !== savedContents[file.id] && (
+                      <span
+                        className="size-2 rounded-full bg-orange-400"
+                        title="Unsaved changes"
+                        aria-label="Unsaved changes"
+                      />
+                    )}
+                </span>
+
 
                   <X
                     className="size-4 hover:opacity-50"

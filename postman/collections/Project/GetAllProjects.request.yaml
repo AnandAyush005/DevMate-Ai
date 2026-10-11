@@ -1,0 +1,16 @@
+$kind: http-request
+url: http://localhost:5000/api/v1/projects/
+method: GET
+body:
+  type: json
+  content: "{\r
+
+    \    \"name\" : \"Ai cold mail2\",\r
+
+    \    \"description\" : \"Ai cold mail generator\"\r
+
+    }"
+auth:
+  type: noauth
+settings: {}
+order: 2000
