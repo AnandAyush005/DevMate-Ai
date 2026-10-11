@@ -4,6 +4,14 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { useGetProjectbyId } from "@/hooks/useGetProjects";
 import {
@@ -57,6 +65,31 @@ export default function ProjectWorkspace({
     useState<WorkspaceFile | null>(null);
   const [openFiles, setOpenFiles] = useState<string[]>([]);
   const [loadedFileIds, setLoadedFileIds] = useState<string[]>([]);
+  const [pendingCloseFileId, setPendingCloseFileId] =
+  useState<string | null>(null);
+
+
+  const hasUnsavedChanges = files.some(
+    (file) =>
+      savedContents[file.id] !== undefined &&
+      file.content !== savedContents[file.id]
+  );
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
 
   // Initialize file metadata without replacing existing local content.
   useEffect(() => {
@@ -185,22 +218,69 @@ const { mutate, isPending } = useUpdateProjectFile(
     });
   };
 
-  const handleFileClose = (fileId: string) => {
-    const remainingFiles = openFiles.filter(
-      (id) => id !== fileId
+  
+
+const closeFileTab = (fileId: string) => {
+  const remainingFiles = openFiles.filter(
+    (id) => id !== fileId
+  );
+
+  if (selectedFile?.id === fileId) {
+    const nextFileId = remainingFiles[0];
+    const nextFile = files.find(
+      (file) => file.id === nextFileId
     );
 
-    if (selectedFile?.id === fileId) {
-      const nextFileId = remainingFiles[0];
-      const nextFile = files.find(
-        (file) => file.id === nextFileId
-      );
+    setSelectedFile(nextFile ?? null);
+  }
 
-      setSelectedFile(nextFile ?? null);
-    }
+  setOpenFiles(remainingFiles);
+};
 
-    setOpenFiles(remainingFiles);
-  };
+const discardFileChanges = (fileId: string) => {
+  const savedContent = savedContents[fileId];
+
+  if (savedContent === undefined) {
+    toast.error("Unable to restore the saved content");
+    return;
+  }
+
+  // Restore the file's last-saved content in workspace state.
+  setFiles((currentFiles) =>
+    currentFiles.map((file) =>
+      file.id === fileId
+        ? { ...file, content: savedContent }
+        : file
+    )
+  );
+
+  // Keep the selected editor synchronized with the restored content.
+  setSelectedFile((currentFile) =>
+    currentFile?.id === fileId
+      ? { ...currentFile, content: savedContent }
+      : currentFile
+  );
+
+  // Close the tab after scheduling the restoration.
+  closeFileTab(fileId);
+};
+
+const handleFileClose = (fileId: string) => {
+  const fileToClose = files.find(
+    (file) => file.id === fileId
+  );
+
+  if (
+    fileToClose &&
+    savedContents[fileId] !== undefined &&
+    fileToClose.content !== savedContents[fileId]
+  ) {
+    setPendingCloseFileId(fileId);
+    return;
+  }
+
+  closeFileTab(fileId);
+};
 
   if (isLoading) {
     return (
@@ -373,6 +453,59 @@ const { mutate, isPending } = useUpdateProjectFile(
           </div>
         </section>
       </main>
+
+
+  <Dialog
+    open={pendingCloseFileId !== null}
+    onOpenChange={(open) => {
+      if (!open) setPendingCloseFileId(null);
+    }}
+  >
+  <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+    <DialogHeader className="space-y-3">
+      <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
+        Discard unsaved changes?
+      </DialogTitle>
+
+      <DialogDescription className="text-sm leading-6 text-zinc-400">
+        This file has unsaved changes. If you close it without
+        saving, your latest edits will be lost.
+      </DialogDescription>
+    </DialogHeader>
+
+    <DialogFooter className="mt-2 gap-2 sm:gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          if (pendingCloseFileId) {
+            discardFileChanges(pendingCloseFileId);
+          }
+
+          setPendingCloseFileId(null);
+        }}
+        className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-5 text-sm font-medium text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] active:scale-[0.98]"
+      >
+        Cancel
+      </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        if (pendingCloseFileId) {
+          discardFileChanges(pendingCloseFileId);
+        }
+
+        setPendingCloseFileId(null);
+      }}
+      className="inline-flex h-10 items-center justify-center rounded-lg border border-red-500/30 bg-red-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+    >
+      Discard changes
+    </button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+
     </div>
   );
 }
