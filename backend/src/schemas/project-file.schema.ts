@@ -1,17 +1,31 @@
-import { z } from "zod"
+
+import { z } from "zod";
 
 export const createProjectFileSchema = z.object({
-    name : z.string().trim().min(1, "Length of name must be greater than or equal then 1").max(100, "Length of name must be lesser than or equal to 100"),
-    path : z.string().trim().min(1, "Length of path must be greater than or equal then 1").max(500, "Length of path must be lesser than or equal to 500"),
-    content : z.string(),
-    language : z.string().trim().min(1, "Length of language must be greater than or equal then 1").max(50, "Length of language must be lesser than or equal to 50"),
-})
+  name: z
+    .string()
+    .trim()
+    .min(1, "File name is required.")
+    .max(100, "File name must not exceed 100 characters."),
+
+  folderId: z
+    .uuid("Invalid folder ID.")
+    .optional(),
+
+  content: z.string(),
+
+  language: z
+    .string()
+    .trim()
+    .min(1, "Language is required.")
+    .max(50, "Language must not exceed 50 characters."),
+});
 
 export const getProjectFileContentSchema = z.object({
-    projectId : z.uuid("Not a valid project id").trim(),
-    fileId : z.uuid("Not a valid file id").trim()
-})
+  projectId: z.uuid("Invalid project ID."),
+  fileId: z.uuid("Invalid file ID."),
+});
 
 export const updateProjectFileSchema = z.object({
-    content : z.string()
-})
+  content: z.string(),
+});

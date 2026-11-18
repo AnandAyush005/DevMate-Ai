@@ -4,7 +4,15 @@ import {
   useQueryClient,
   QueryClient,
 } from '@tanstack/react-query'
-import { getAuthMe, login, logout, register } from '@/lib/auth.api';
+import {
+  getAuthMe,
+  getPasswordReset,
+  login,
+  logout,
+  register,
+  requestPasswordReset,
+  resetPassword,
+} from '@/lib/auth.api';
 
 export function useMe() {
     return useQuery({
@@ -53,4 +61,35 @@ export function useLogout(){
             });
         },
     })
+}
+
+export function useRequestPasswordReset() {
+    return useMutation({
+        mutationKey: ["auth", "forgot-password"],
+        mutationFn: requestPasswordReset,
+    });
+}
+
+export function usePasswordResetToken(token: string) {
+    return useQuery({
+        queryKey: ["auth", "reset-password", token],
+        queryFn: () => getPasswordReset(token),
+        enabled: token.length > 0,
+        retry: false,
+    });
+}
+
+export function useResetPassword() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["auth", "reset-password"],
+        mutationFn: resetPassword,
+
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["auth", "me"],
+            });
+        },
+    });
 }

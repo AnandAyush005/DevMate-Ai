@@ -9,6 +9,7 @@ import { Eye, EyeOff, Code2, Loader2 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import ForgotPasswordDialog from "@/components/auth/ForgotPasswordDialog";
 import { useLogin } from "@/hooks/useAuth";
 
 export default function Login() {
@@ -146,6 +147,10 @@ export default function Login() {
                   )}
                 </button>
               </div>
+            </div>
+
+            <div className="flex justify-end">
+              <ForgotPasswordDialog />
             </div>
 
             {/* Login Button */}

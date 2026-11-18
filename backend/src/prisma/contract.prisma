@@ -1,38 +1,54 @@
 // use prisma-8
 model User {
-  id           String                     @id @default(uuid())
-  name         String
-  email        String                     @unique
-  passwordHash String
-  createdAt    temporal.createdAtString()
-  updatedAt    temporal.updatedAtString()
-  projects     Project[]
+  id                       String                       @id @default(uuid())
+  name                     String 
+  email                    String                       @unique
+  passwordHash             String
+  passwordResetTokenHash   String?
+  passwordResetExpiresAt   String?
+  createdAt                temporal.createdAtString()
+  updatedAt                temporal.updatedAtString()
+  projects                 Project[]
 }
 
 model Project {
-  id          String                     @id @default(uuid())
-  name        String
-  description String?
-  userId      String
-  user        User                       @relation(fields:[userId], references:[id], onDelete: Cascade)
-  createdAt   temporal.createdAtString()
-  updatedAt   temporal.updatedAtString()
-  files       ProjectFile[]
+  id              String                      @id @default(uuid())
+  name            String
+  description     String?
+  userId          String
+  user            User                        @relation(fields:[userId], references:[id], onDelete: Cascade)
+  createdAt       temporal.createdAtString()
+  updatedAt       temporal.updatedAtString()
+  projectFolder   ProjectFolder[]
 
   @@unique([userId, name])  
 }
 
-model ProjectFile {
-  id          String                @id @default(uuid())
-  name        String
-  path        String
-  content     String
-  language    String
-  projectId   String
-  project     Project                 @relation(fields:[projectId], references:[id], onDelete : Cascade)
-  createdAt   temporal.createdAtString()
-  updatedAt   temporal.updatedAtString()
+model ProjectFolder {
+  id             String                       @id @default(uuid())
+  name           String
+  path           String
+  projectId      String
+  project        Project                      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentFolderId String?
+  parentFolder   ProjectFolder?               @relation("FolderHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
+  subfolders     ProjectFolder[]              @relation("FolderHierarchy")
+  files          ProjectFile[]
+  createdAt      temporal.createdAtString()
+  updatedAt      temporal.updatedAtString()
 
   @@unique([projectId, path])
+}
 
+model ProjectFile {
+  id        String                              @id @default(uuid())
+  name      String
+  content   String
+  language  String
+  folderId  String?
+  folder    ProjectFolder?                      @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  createdAt temporal.createdAtString()
+  updatedAt temporal.updatedAtString()
+
+  @@unique([folderId, name])
 }

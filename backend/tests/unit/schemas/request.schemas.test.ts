@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { loginSchema, registerSchema } from "../../../src/schemas/auth.schema.ts";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  resetPasswordTokenParamSchema,
+} from "../../../src/schemas/auth.schema.ts";
 import {
   createProjectSchema,
   projectIdSchema,
@@ -25,6 +31,26 @@ describe("request schemas", () => {
       password: "a-long-password",
       role: "admin",
     }).success, false);
+    assert.deepEqual(
+      forgotPasswordSchema.parse({ email: " USER@example.test " }),
+      { email: "user@example.test" },
+    );
+    assert.equal(
+      resetPasswordSchema.safeParse({
+        password: "a-long-password",
+        confirmPassword: "a-different-password",
+      }).success,
+      false,
+    );
+    assert.equal(
+      resetPasswordSchema.safeParse({
+        password: "a-long-password",
+        confirmPassword: "a-long-password",
+      }).success,
+      true,
+    );
+    assert.equal(resetPasswordTokenParamSchema.safeParse("short").success, false);
+    assert.equal(resetPasswordTokenParamSchema.safeParse("a".repeat(32)).success, true);
   });
 
   it("validates project create, update, and UUID input", () => {

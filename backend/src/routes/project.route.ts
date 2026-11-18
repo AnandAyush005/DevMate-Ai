@@ -8,7 +8,9 @@ import {
   getProjectFiles,
   getProjects,
   updateProject,
-  updateProjectFileContent
+  updateProjectFileContent,
+  createProjectFolder,
+  getProjectFolders,
 } from "../controller/project.controller.ts";
 import { authenticate } from "../middlewares/auth.middleware.ts";
 import { verifyRequestOrigin } from "../middlewares/origin.middleware.ts";
@@ -30,5 +32,17 @@ projectRouter.patch(
   updateProjectFileContent
 );
 
+projectRouter.get(
+  "/:projectId/folders",
+  authenticate,
+  getProjectFolders,
+);
+
+projectRouter.post(
+  "/:projectId/folders",
+  verifyRequestOrigin,
+  authenticate,
+  createProjectFolder,
+);
 
 export default projectRouter;
