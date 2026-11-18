@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { ApiError } from "../utils/api-error.ts";
 import { getAuthenticatedUserId } from "../middlewares/auth.middleware.ts";
 import { createProjectSchema, projectIdSchema, updateProjectSchema } from "../schemas/project.schema.ts";
+import { createProjectFolderSchema } from "../schemas/project-folder.schema.ts";
 import {
   createProjectService,
   deleteProjectService,
@@ -11,11 +12,12 @@ import {
   updateProjectService,
   createProjectFileService,
   getProjectFileContentService,
-  updateProjectFileService
+  updateProjectFileService,
+  getProjectFoldersService,
+  createProjectFolderService
 } from "../services/project.service.ts";
 import { getValidationMessage } from "../utils/validation.ts";
 import { createProjectFileSchema, getProjectFileContentSchema, updateProjectFileSchema } from "../schemas/project-file.schema.ts";
-import { success } from "zod";
 
 export const createProject = async (req: Request, res: Response) => {
   const parsed = createProjectSchema.safeParse(req.body);
@@ -160,3 +162,67 @@ export const updateProjectFileContent = async(req : Request, res : Response)=>{
   })
 
 }
+
+
+
+export const getProjectFolders = async (
+  req: Request,
+  res: Response,
+) => {
+  const projectId = projectIdSchema.safeParse(req.params.projectId);
+
+  if (!projectId.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(projectId.error),
+    );
+  }
+
+  const folders = await getProjectFoldersService(
+    getAuthenticatedUserId(req),
+    projectId.data,
+  );
+
+  return res.status(200).json({
+    success: true,
+    data: folders,
+  });
+};
+
+export const createProjectFolder = async (
+  req: Request,
+  res: Response,
+) => {
+  const projectId = projectIdSchema.safeParse(req.params.projectId);
+
+  if (!projectId.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(projectId.error),
+    );
+  }
+
+  const parsed = createProjectFolderSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(parsed.error),
+    );
+  }
+
+  const folder = await createProjectFolderService(
+    getAuthenticatedUserId(req),
+    projectId.data,
+    parsed.data.name,
+    parsed.data.parentFolderId,
+  );
+
+  return res.status(201).json({
+    success: true,
+    data: folder,
+  });
+};

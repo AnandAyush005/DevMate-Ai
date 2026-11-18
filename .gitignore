@@ -18,3 +18,9 @@ build/
 *.log
 
 *.yaml
+
+#agents
+.agents
+.claude
+.cursor
+.devin

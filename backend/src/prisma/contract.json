@@ -12,6 +12,10 @@
       "model": "ProjectFile",
       "namespace": "public"
     },
+    "ProjectFolder": {
+      "model": "ProjectFolder",
+      "namespace": "public"
+    },
     "User": {
       "model": "User",
       "namespace": "public"
@@ -67,7 +71,7 @@
               }
             },
             "relations": {
-              "files": {
+              "projectFolder": {
                 "cardinality": "1:N",
                 "on": {
                   "localFields": [
@@ -78,7 +82,7 @@
                   ]
                 },
                 "to": {
-                  "model": "ProjectFile",
+                  "model": "ProjectFolder",
                   "namespace": "public"
                 }
               },
@@ -140,6 +144,13 @@
                   "kind": "scalar"
                 }
               },
+              "folderId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -156,6 +167,90 @@
               },
               "name": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "folder": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "folderId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ProjectFolder",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "content": {
+                  "column": "content"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "folderId": {
+                  "column": "folderId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "language": {
+                  "column": "language"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ProjectFile"
+            }
+          },
+          "ProjectFolder": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "parentFolderId": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -184,6 +279,37 @@
               }
             },
             "relations": {
+              "files": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "folderId"
+                  ]
+                },
+                "to": {
+                  "model": "ProjectFile",
+                  "namespace": "public"
+                }
+              },
+              "parentFolder": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "parentFolderId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ProjectFolder",
+                  "namespace": "public"
+                }
+              },
               "project": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -199,24 +325,36 @@
                   "model": "Project",
                   "namespace": "public"
                 }
+              },
+              "subfolders": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "parentFolderId"
+                  ]
+                },
+                "to": {
+                  "model": "ProjectFolder",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
               "fields": {
-                "content": {
-                  "column": "content"
-                },
                 "createdAt": {
                   "column": "createdAt"
                 },
                 "id": {
                   "column": "id"
                 },
-                "language": {
-                  "column": "language"
-                },
                 "name": {
                   "column": "name"
+                },
+                "parentFolderId": {
+                  "column": "parentFolderId"
                 },
                 "path": {
                   "column": "path"
@@ -229,7 +367,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "ProjectFile"
+              "table": "ProjectFolder"
             }
           },
           "User": {
@@ -264,6 +402,20 @@
               },
               "passwordHash": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "passwordResetExpiresAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "passwordResetTokenHash": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -310,6 +462,12 @@
                 },
                 "passwordHash": {
                   "column": "passwordHash"
+                },
+                "passwordResetExpiresAt": {
+                  "column": "passwordResetExpiresAt"
+                },
+                "passwordResetTokenHash": {
+                  "column": "passwordResetTokenHash"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -416,6 +574,11 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "folderId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -430,6 +593,77 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "folderId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ProjectFile"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ProjectFolder"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "folderId"
+                  ],
+                  "name": "ProjectFile_folderId_idx_5985e562",
+                  "prefix": "ProjectFile_folderId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "folderId",
+                    "name"
+                  ]
+                }
+              ]
+            },
+            "ProjectFolder": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "parentFolderId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "path": {
                   "codecId": "pg/text@1",
@@ -455,7 +689,7 @@
                       "projectId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "ProjectFile"
+                    "tableName": "ProjectFolder"
                   },
                   "target": {
                     "columns": [
@@ -464,15 +698,40 @@
                     "namespaceId": "public",
                     "tableName": "Project"
                   }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "parentFolderId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ProjectFolder"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ProjectFolder"
+                  }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
+                    "parentFolderId"
+                  ],
+                  "name": "ProjectFolder_parentFolderId_idx_66fef1f5",
+                  "prefix": "ProjectFolder_parentFolderId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "projectId"
                   ],
-                  "name": "ProjectFile_projectId_idx_a96e4d92",
-                  "prefix": "ProjectFile_projectId_idx",
+                  "name": "ProjectFolder_projectId_idx_a96e4d92",
+                  "prefix": "ProjectFolder_projectId_idx",
                   "unique": false
                 }
               ],
@@ -517,6 +776,16 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "passwordResetExpiresAt": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "passwordResetTokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "nativeType": "timestamptz",
@@ -544,10 +813,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c4713d10b5b938b5a84d909225f57103c9351cb7f6552fe7f3bb416315a55268"
+    "storageHash": "f3756409cfffcbc00680fd2937dfadafa80b1e8d837d43256d4655085f1d0290"
   },
   "execution": {
-    "executionHash": "57ce3e903dd8f74d5f2e07d53983056aa42cf5317cbd7ad44ea79e7e82ea0a0f",
+    "executionHash": "5825e52bd6eca0ed88f14c001c558c3a6cd4bfce9f50125272d8ff7b55ebd22f",
     "mutations": {
       "defaults": [
         {
@@ -622,6 +891,43 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "ProjectFile"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "createdAt",
+            "namespace": "public",
+            "table": "ProjectFolder"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "ProjectFolder"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "ProjectFolder"
           }
         },
         {

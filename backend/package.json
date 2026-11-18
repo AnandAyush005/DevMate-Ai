@@ -19,12 +19,14 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
+    "nodemailer": "^10.6.0",
     "prisma": "^8.0.0-rc.17",
     "process": "^0.11.10",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
+    "@types/nodemailer": "^8.0.2",
     "typescript": "^6.0.3"
   }
 }

@@ -8,6 +8,8 @@ type User = {
   name: string;
   email: string;
   passwordHash: string;
+  passwordResetTokenHash: string | null;
+  passwordResetExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -23,6 +25,7 @@ type Project = {
 
 const users = new Map<string, User>();
 const projects = new Map<string, Project>();
+const mailCalls: { email: string; resetUrl: string }[] = [];
 
 const matches = <T extends object>(record: T, where: Partial<T>) =>
   Object.entries(where).every(([key, value]) => record[key as keyof T] === value);
@@ -45,6 +48,13 @@ const db = {
                 return Object.fromEntries(fields.map((field) => [field, user[field]]));
               },
             }),
+            update: async (data: Partial<User>) => {
+              const user = find();
+              if (!user) return null;
+              const updated = { ...user, ...data, updatedAt: new Date().toISOString() };
+              users.set(updated.id, updated);
+              return updated;
+            },
           };
         },
         create: async (data: Omit<User, "id" | "createdAt" | "updatedAt">) => {
@@ -52,7 +62,14 @@ const db = {
             throw duplicateKeyError();
           }
           const now = new Date().toISOString();
-          const user = { ...data, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
+          const user = {
+            ...data,
+            passwordResetTokenHash: data.passwordResetTokenHash ?? null,
+            passwordResetExpiresAt: data.passwordResetExpiresAt ?? null,
+            id: crypto.randomUUID(),
+            createdAt: now,
+            updatedAt: now,
+          };
           users.set(user.id, user);
           return user;
         },
@@ -117,6 +134,13 @@ process.env.FRONTEND_URL ??= "http://localhost:3000";
 process.env.COOKIE_SAME_SITE ??= "lax";
 
 mock.module("../../../src/prisma/db.ts", { namedExports: { db } });
+mock.module("../../../src/services/mail.service.ts", {
+  namedExports: {
+    sendPasswordResetEmail: async (email: string, resetUrl: string) => {
+      mailCalls.push({ email, resetUrl });
+    },
+  },
+});
 
 const { default: app } = await import("../../../src/app.ts");
 
@@ -140,6 +164,7 @@ describe("API routes", () => {
   beforeEach(() => {
     users.clear();
     projects.clear();
+    mailCalls.length = 0;
   });
 
   const request = (path: string, init?: RequestInit) => fetch(`${baseUrl}${path}`, init);
@@ -311,6 +336,76 @@ describe("API routes", () => {
       body: JSON.stringify({ email: "first@example.test", password: "incorrect-password" }),
     });
     assert.equal(invalidLogin.status, 401);
+  });
+
+  it("sends a password reset link and updates the password with a valid token", async () => {
+    const account = await register("reset@example.test");
+    assert.equal(account.response.status, 201);
+
+    const unknownEmail = await request("/api/v1/auth/forgot-password", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "missing@example.test" }),
+    });
+    assert.equal(unknownEmail.status, 200);
+    assert.equal(mailCalls.length, 0);
+
+    const forgotPassword = await request("/api/v1/auth/forgot-password", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "RESET@example.test" }),
+    });
+    assert.equal(forgotPassword.status, 200);
+    assert.equal(mailCalls.length, 1);
+    assert.equal(mailCalls[0]?.email, "reset@example.test");
+
+    const token = mailCalls[0]?.resetUrl.split("/reset-password/")[1];
+    assert.ok(token);
+
+    const invalidToken = await request("/api/v1/auth/reset-password/not-a-valid-reset-token");
+    assert.equal(invalidToken.status, 400);
+
+    const validToken = await request(`/api/v1/auth/reset-password/${token}`);
+    assert.equal(validToken.status, 200);
+
+    const mismatchedPasswords = await request(`/api/v1/auth/reset-password/${token}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        password: "a-brand-new-password",
+        confirmPassword: "a-different-password",
+      }),
+    });
+    assert.equal(mismatchedPasswords.status, 400);
+
+    const reset = await request(`/api/v1/auth/reset-password/${token}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        password: "a-brand-new-password",
+        confirmPassword: "a-brand-new-password",
+      }),
+    });
+    assert.equal(reset.status, 200);
+    assert.match(reset.headers.get("set-cookie") ?? "", /devmate_auth=/);
+    assert.doesNotMatch(JSON.stringify(await reset.json()), /passwordHash/);
+
+    const reusedToken = await request(`/api/v1/auth/reset-password/${token}`);
+    assert.equal(reusedToken.status, 401);
+
+    const oldPasswordLogin = await request("/api/v1/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "reset@example.test", password: "a-long-test-password" }),
+    });
+    assert.equal(oldPasswordLogin.status, 401);
+
+    const newPasswordLogin = await request("/api/v1/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "reset@example.test", password: "a-brand-new-password" }),
+    });
+    assert.equal(newPasswordLogin.status, 200);
   });
 
   it("rejects invalid input, unsafe origins, malformed JSON, and unknown routes", async () => {

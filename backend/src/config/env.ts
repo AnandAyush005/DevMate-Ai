@@ -15,6 +15,11 @@ if (parsedFrontendUrl.protocol !== "http:" && parsedFrontendUrl.protocol !== "ht
 }
 
 const frontendOrigin = parsedFrontendUrl.origin;
+const smtpPort = Number.parseInt(process.env["SMTP_PORT"] ?? "587", 10);
+if (!Number.isInteger(smtpPort) || smtpPort <= 0) {
+  throw new Error("SMTP_PORT must be a positive integer.");
+}
+
 const cookieSameSite = (process.env["COOKIE_SAME_SITE"] ?? "lax").toLowerCase();
 
 const isCookieSameSite = (
@@ -31,4 +36,12 @@ export const env = {
   jwtSecret,
   cookieSameSite,
   cookieSecure: process.env["NODE_ENV"] === "production" || cookieSameSite === "none",
+  smtp: {
+    host: process.env["SMTP_HOST"] ?? "",
+    port: smtpPort,
+    secure: (process.env["SMTP_SECURE"] ?? "false").toLowerCase() === "true",
+    user: process.env["SMTP_USER"] ?? "",
+    pass: process.env["SMTP_PASS"] ?? "",
+    from: process.env["SMTP_FROM"] ?? process.env["SMTP_USER"] ?? "DevMate <noreply@localhost>",
+  },
 };
