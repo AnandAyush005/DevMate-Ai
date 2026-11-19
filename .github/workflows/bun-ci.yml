@@ -18,7 +18,5 @@ jobs:
     
       - name: Install
         run: cd backend && bun install
-      - name: Install dependencies
-        run: cd backend && bun install
       - name: Run tests
         run: cd backend && bun test
