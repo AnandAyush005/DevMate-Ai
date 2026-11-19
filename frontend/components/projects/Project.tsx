@@ -1,9 +1,9 @@
 "use client";
 
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { toast } from "sonner"
+import { useEffect, useMemo, useState } from "react";
+import { FilePlus, FolderPlus, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -12,17 +12,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 import { useGetProjectbyId } from "@/hooks/useGetProjects";
 import {
   useGetProjectFiles,
   useGetProjectFileContent,
   useUpdateProjectFile,
+  useGetProjectFolders,
+  useCreateProjectFile,
+  useCreateProjectFolder,
+  useRenameProjectFile,
+  useRenameProjectFolder,
 } from "@/hooks/useProjects";
 
 import FileTree from "./FileTree";
 import type { FileTreeNode } from "./FileTree";
 import CodeEditor from "./CodeEditor";
+import { getLanguageFromFileName } from "./language";
 
 type WorkspaceFile = {
   id: string;
@@ -54,8 +61,44 @@ export default function ProjectWorkspace({
     isLoading: isFilesLoading,
   } = useGetProjectFiles(projectId);
 
+  const {
+    data: projectFoldersResponse,
+    isLoading: isFoldersLoading,
+  } = useGetProjectFolders(projectId);
+
   const projectFiles = projectFilesResponse?.data?.files;
-  
+  const projectFolders = projectFoldersResponse?.data ?? [];
+
+  const createFileMutation = useCreateProjectFile(projectId);
+  const createFolderMutation = useCreateProjectFolder(projectId);
+  const renameFileMutation = useRenameProjectFile(projectId);
+  const renameFolderMutation = useRenameProjectFolder(projectId);
+
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+
+  const [createDialog, setCreateDialog] = useState<{
+    isOpen: boolean;
+    type: "file" | "folder";
+    targetFolderId?: string;
+    name: string;
+  }>({
+    isOpen: false,
+    type: "file",
+    name: "",
+  });
+
+  const [renameDialog, setRenameDialog] = useState<{
+    isOpen: boolean;
+    type: "file" | "folder";
+    id: string;
+    name: string;
+  }>({
+    isOpen: false,
+    type: "file",
+    id: "",
+    name: "",
+  });
+
   const [savedContents, setSavedContents] = useState<
     Record<string, string>
   >({});
@@ -282,6 +325,267 @@ const handleFileClose = (fileId: string) => {
   closeFileTab(fileId);
 };
 
+  const handleOpenCreate = (type: "file" | "folder", targetFolderId?: string) => {
+    setCreateDialog({
+      isOpen: true,
+      type,
+      targetFolderId: targetFolderId ?? selectedFolderId ?? undefined,
+      name: "",
+    });
+  };
+
+  const handleOpenRename = (node: FileTreeNode) => {
+    if (!node.id) return;
+    setRenameDialog({
+      isOpen: true,
+      type: node.type,
+      id: node.id,
+      name: node.name,
+    });
+  };
+
+  const handleCreateSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmedName = createDialog.name.trim();
+
+    if (!trimmedName) {
+      toast.error(`Please enter a ${createDialog.type} name`);
+      return;
+    }
+
+    if (/[\\/]/.test(trimmedName)) {
+      toast.error(
+        `${createDialog.type === "file" ? "File" : "Folder"} name cannot contain path separators`
+      );
+      return;
+    }
+
+    if (createDialog.type === "file") {
+      createFileMutation.mutate(
+        {
+          name: trimmedName,
+          folderId: createDialog.targetFolderId,
+          language: getLanguageFromFileName(trimmedName),
+          content: "",
+        },
+        {
+          onSuccess: (res) => {
+            toast.success("File created successfully");
+            setCreateDialog((prev) => ({ ...prev, isOpen: false, name: "" }));
+
+            const newFile = res?.data;
+            if (newFile?.id) {
+              const workspaceFile: WorkspaceFile = {
+                id: newFile.id,
+                name: newFile.name,
+                path: newFile.path || `/${newFile.name}`,
+                content: newFile.content || "",
+              };
+              setFiles((prev) => {
+                const exists = prev.some((f) => f.id === newFile.id);
+                return exists ? prev : [...prev, workspaceFile];
+              });
+              setSelectedFile(workspaceFile);
+              setOpenFiles((prev) =>
+                prev.includes(newFile.id) ? prev : [...prev, newFile.id]
+              );
+            }
+          },
+          onError: (err) => {
+            const message =
+              axios.isAxiosError(err) && err.response?.data?.error?.message
+                ? err.response.data.error.message
+                : "Failed to create file";
+            toast.error(message);
+          },
+        }
+      );
+    } else {
+      createFolderMutation.mutate(
+        {
+          name: trimmedName,
+          parentFolderId: createDialog.targetFolderId,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Folder created successfully");
+            setCreateDialog((prev) => ({ ...prev, isOpen: false, name: "" }));
+          },
+          onError: (err) => {
+            const message =
+              axios.isAxiosError(err) && err.response?.data?.error?.message
+                ? err.response.data.error.message
+                : "Failed to create folder";
+            toast.error(message);
+          },
+        }
+      );
+    }
+  };
+
+  const handleRenameSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmedName = renameDialog.name.trim();
+
+    if (!trimmedName) {
+      toast.error(`Please enter a ${renameDialog.type} name`);
+      return;
+    }
+
+    if (/[\\/]/.test(trimmedName)) {
+      toast.error(
+        `${renameDialog.type === "file" ? "File" : "Folder"} name cannot contain path separators`
+      );
+      return;
+    }
+
+    if (renameDialog.type === "file") {
+      renameFileMutation.mutate(
+        {
+          fileId: renameDialog.id,
+          name: trimmedName,
+        },
+        {
+          onSuccess: () => {
+            toast.success("File renamed successfully");
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === renameDialog.id ? { ...f, name: trimmedName } : f
+              )
+            );
+            setSelectedFile((prev) =>
+              prev?.id === renameDialog.id
+                ? { ...prev, name: trimmedName }
+                : prev
+            );
+            setRenameDialog((prev) => ({
+              ...prev,
+              isOpen: false,
+              name: "",
+              id: "",
+            }));
+          },
+          onError: (err) => {
+            const message =
+              axios.isAxiosError(err) && err.response?.data?.error?.message
+                ? err.response.data.error.message
+                : "Failed to rename file";
+            toast.error(message);
+          },
+        }
+      );
+    } else {
+      renameFolderMutation.mutate(
+        {
+          folderId: renameDialog.id,
+          name: trimmedName,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Folder renamed successfully");
+            setRenameDialog((prev) => ({
+              ...prev,
+              isOpen: false,
+              name: "",
+              id: "",
+            }));
+          },
+          onError: (err) => {
+            const message =
+              axios.isAxiosError(err) && err.response?.data?.error?.message
+                ? err.response.data.error.message
+                : "Failed to rename folder";
+            toast.error(message);
+          },
+        }
+      );
+    }
+  };
+
+  const fileTree = useMemo(() => {
+    const rawFolders: Array<{
+      id: string;
+      name: string;
+      path: string;
+      parentFolderId: string | null;
+    }> = projectFolders ?? [];
+
+    const rawFiles: Array<{
+      id: string;
+      name: string;
+      path: string;
+      folderId?: string;
+    }> = projectFiles ?? [];
+
+    const rootFolder = rawFolders.find(
+      (f) => f.path === "/" || f.parentFolderId === null || f.name === "root"
+    );
+    const rootFolderId = rootFolder?.id;
+
+    const buildFolderNode = (folder: {
+      id: string;
+      name: string;
+      path: string;
+      parentFolderId: string | null;
+    }): FileTreeNode => {
+      const childFolders = rawFolders
+        .filter((f) => f.parentFolderId === folder.id && f.id !== folder.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      const childFiles = rawFiles
+        .filter((file) => file.folderId === folder.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      const children: FileTreeNode[] = [
+        ...childFolders.map(buildFolderNode),
+        ...childFiles.map((file) => ({
+          type: "file" as const,
+          id: file.id,
+          name: file.name,
+          path: file.path,
+          folderId: file.folderId,
+        })),
+      ];
+
+      return {
+        type: "folder" as const,
+        id: folder.id,
+        name: folder.name,
+        path: folder.path,
+        children,
+      };
+    };
+
+    if (rootFolder) {
+      const topFolders = rawFolders
+        .filter((f) => f.parentFolderId === rootFolderId && f.id !== rootFolderId)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      const topFiles = rawFiles
+        .filter((file) => file.folderId === rootFolderId || !file.folderId)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      return [
+        ...topFolders.map(buildFolderNode),
+        ...topFiles.map((file) => ({
+          type: "file" as const,
+          id: file.id,
+          name: file.name,
+          path: file.path,
+          folderId: file.folderId,
+        })),
+      ];
+    }
+
+    return rawFiles.map((file) => ({
+      type: "file" as const,
+      id: file.id,
+      name: file.name,
+      path: file.path,
+      folderId: file.folderId,
+    }));
+  }, [projectFolders, projectFiles]);
+
   if (isLoading) {
     return (
       <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -304,15 +608,6 @@ const handleFileClose = (fileId: string) => {
   }
 
   const project = data?.data;
-
-  const fileTree: FileTreeNode[] = (projectFiles ?? []).map(
-    (file: { id: string; name: string; path: string }) => ({
-      type: "file",
-      id: file.id,
-      name: file.name,
-      path: file.path,
-    })
-  );
 
   return (
     <div className="dark flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
@@ -340,12 +635,33 @@ const handleFileClose = (fileId: string) => {
 
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <aside className="flex h-64 w-full shrink-0 flex-col border-b lg:h-full lg:w-64 lg:border-b-0 lg:border-r">
-          <div className="flex h-10 items-center border-b px-4">
+          <div className="flex h-10 items-center justify-between border-b px-4">
             <span className="text-sm font-medium">Files</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleOpenCreate("file")}
+                title="New File"
+                className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+                aria-label="Create file"
+              >
+                <FilePlus className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleOpenCreate("folder")}
+                title="New Folder"
+                className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+                aria-label="Create folder"
+              >
+                <FolderPlus className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
-            {isFilesLoading ? (
+            {isFilesLoading || isFoldersLoading ? (
               <p className="px-2 text-sm text-zinc-500">
                 Loading files...
               </p>
@@ -356,10 +672,14 @@ const handleFileClose = (fileId: string) => {
             ) : (
               fileTree.map((node) => (
                 <FileTree
-                  key={node.id}
+                  key={node.id ?? node.path ?? node.name}
                   node={node}
                   onSelectedFile={handleFileSelect}
                   selectedFile={selectedFile ?? undefined}
+                  onRename={handleOpenRename}
+                  onCreateInFolder={handleOpenCreate}
+                  selectedFolderId={selectedFolderId}
+                  onSelectFolder={setSelectedFolderId}
                 />
               ))
             )}
@@ -505,6 +825,150 @@ const handleFileClose = (fileId: string) => {
   </DialogContent>
 </Dialog>
 
+
+    <Dialog
+      open={createDialog.isOpen}
+      onOpenChange={(open) => {
+        if (!open) setCreateDialog((prev) => ({ ...prev, isOpen: false }));
+      }}
+    >
+      <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
+            Create New {createDialog.type === "file" ? "File" : "Folder"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-zinc-400">
+            Enter the name for the new {createDialog.type}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleCreateSubmit} className="space-y-4 py-2">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+              Name
+            </label>
+            <Input
+              value={createDialog.name}
+              onChange={(e) =>
+                setCreateDialog((prev) => ({ ...prev, name: e.target.value }))
+              }
+              placeholder={
+                createDialog.type === "file"
+                  ? "e.g. index.ts, styles.css"
+                  : "e.g. components, utils"
+              }
+              autoFocus
+              className="border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-zinc-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+              Location
+            </label>
+            <select
+              value={createDialog.targetFolderId ?? ""}
+              onChange={(e) =>
+                setCreateDialog((prev) => ({
+                  ...prev,
+                  targetFolderId: e.target.value || undefined,
+                }))
+              }
+              className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+            >
+              <option value="">Root (/)</option>
+              {projectFolders
+                .filter((f: any) => f.path !== "/" && f.name !== "root")
+                .map((f: any) => (
+                  <option key={f.id} value={f.id}>
+                    {f.path || f.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setCreateDialog((prev) => ({ ...prev, isOpen: false }))
+              }
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={
+                createFileMutation.isPending || createFolderMutation.isPending
+              }
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {createFileMutation.isPending || createFolderMutation.isPending
+                ? "Creating..."
+                : "Create"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog
+      open={renameDialog.isOpen}
+      onOpenChange={(open) => {
+        if (!open) setRenameDialog((prev) => ({ ...prev, isOpen: false }));
+      }}
+    >
+      <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
+            Rename {renameDialog.type === "file" ? "File" : "Folder"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-zinc-400">
+            Enter the new name for this {renameDialog.type}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleRenameSubmit} className="space-y-4 py-2">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+              New Name
+            </label>
+            <Input
+              value={renameDialog.name}
+              onChange={(e) =>
+                setRenameDialog((prev) => ({ ...prev, name: e.target.value }))
+              }
+              autoFocus
+              className="border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-zinc-500"
+            />
+          </div>
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setRenameDialog((prev) => ({ ...prev, isOpen: false }))
+              }
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={
+                renameFileMutation.isPending || renameFolderMutation.isPending
+              }
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {renameFileMutation.isPending || renameFolderMutation.isPending
+                ? "Renaming..."
+                : "Rename"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
 
     </div>
   );

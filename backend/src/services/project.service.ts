@@ -123,6 +123,29 @@ export const getProjectFoldersService = async (
 };
 
 
+export const getLanguageFromFileName = (fileName: string): string => {
+  const parts = fileName.split(".");
+  const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+  switch (extension) {
+    case "ts":
+    case "tsx":
+      return "typescript";
+    case "js":
+    case "jsx":
+      return "javascript";
+    case "css":
+      return "css";
+    case "html":
+      return "html";
+    case "json":
+      return "json";
+    case "md":
+      return "markdown";
+    default:
+      return "plaintext";
+  }
+};
+
 export const createProjectFolderService = async (
   userId: string,
   projectId: string,
@@ -172,7 +195,7 @@ export const createProjectFolderService = async (
   const path =
     parentFolder.path === "/"
       ? `/${trimmedName}/`
-      : `${parentFolder.path}${parentFolder.name}/`;
+      : `${parentFolder.path}${trimmedName}/`;
 
   try {
     return await db.orm.public.ProjectFolder.create({
@@ -181,6 +204,109 @@ export const createProjectFolderService = async (
       projectId,
       parentFolderId: parentFolder.id,
     });
+  } catch (error) {
+    if (isUniqueConstraintViolation(error)) {
+      throw new ApiError(
+        409,
+        "FOLDER_ALREADY_EXISTS",
+        "A folder with this path already exists.",
+      );
+    }
+
+    throw error;
+  }
+};
+
+export const updateProjectFolderService = async (
+  userId: string,
+  projectId: string,
+  folderId: string,
+  data: { name: string },
+) => {
+  await getProjectService(userId, projectId);
+
+  const folder = await db.orm.public.ProjectFolder
+    .where({ id: folderId, projectId })
+    .first();
+
+  if (!folder) {
+    throw new ApiError(404, "FOLDER_NOT_FOUND", "Folder not found in this project.");
+  }
+
+  if (folder.path === "/" || !folder.parentFolderId) {
+    throw new ApiError(400, "CANNOT_RENAME_ROOT", "Cannot rename the root folder.");
+  }
+
+  const trimmedName = data.name.trim();
+
+  if (
+    !trimmedName ||
+    trimmedName.length > 100 ||
+    /[/\\]/.test(trimmedName) ||
+    trimmedName === "." ||
+    trimmedName === ".."
+  ) {
+    throw new ApiError(
+      400,
+      "INVALID_FOLDER_NAME",
+      "Folder name must be 1–100 characters and cannot contain path separators.",
+    );
+  }
+
+  const parentFolder = await db.orm.public.ProjectFolder
+    .where({ id: folder.parentFolderId, projectId })
+    .first();
+
+  if (!parentFolder) {
+    throw new ApiError(404, "PARENT_FOLDER_NOT_FOUND", "Parent folder not found.");
+  }
+
+  const newPath =
+    parentFolder.path === "/"
+      ? `/${trimmedName}/`
+      : `${parentFolder.path}${trimmedName}/`;
+
+  if (newPath !== folder.path) {
+    const existing = await db.orm.public.ProjectFolder
+      .where({ projectId, path: newPath })
+      .first();
+
+    if (existing && existing.id !== folder.id) {
+      throw new ApiError(
+        409,
+        "FOLDER_ALREADY_EXISTS",
+        "A folder with this path already exists.",
+      );
+    }
+  }
+
+  const oldPath = folder.path;
+
+  try {
+    const updated = await db.orm.public.ProjectFolder
+      .where({ id: folderId, projectId })
+      .update({ name: trimmedName, path: newPath });
+
+    if (!updated) {
+      throw new ApiError(404, "FOLDER_NOT_FOUND", "Folder not found in this project.");
+    }
+
+    if (oldPath !== newPath) {
+      const allFolders = await db.orm.public.ProjectFolder
+        .where({ projectId })
+        .all();
+
+      for (const sub of allFolders) {
+        if (sub.id !== folder.id && sub.path.startsWith(oldPath)) {
+          const updatedSubPath = newPath + sub.path.slice(oldPath.length);
+          await db.orm.public.ProjectFolder
+            .where({ id: sub.id, projectId })
+            .update({ path: updatedSubPath });
+        }
+      }
+    }
+
+    return updated;
   } catch (error) {
     if (isUniqueConstraintViolation(error)) {
       throw new ApiError(
@@ -264,11 +390,13 @@ export const createProjectFileService = async (
     );
   }
 
+  const language = data.language || getLanguageFromFileName(data.name);
+
   try {
     return await db.orm.public.ProjectFile.create({
       name: data.name,
-      content: data.content,
-      language: data.language,
+      content: data.content ?? "",
+      language,
       folderId: folder.id,
     });
   } catch (error) {
@@ -324,7 +452,7 @@ export const updateProjectFileService = async (
   userId: string,
   projectId: string,
   fileId: string,
-  content: string,
+  data: { content?: string; name?: string },
 ) => {
   await getProjectService(userId, projectId);
 
@@ -347,16 +475,50 @@ export const updateProjectFileService = async (
     throw new ApiError(404, "FILE_NOT_FOUND", "File not found.");
   }
 
-  const updated = await db.orm.public.ProjectFile
-    .where({ id: fileId, folderId: file.folderId })
-    .update({ content });
+  const updateData: { content?: string; name?: string; language?: string } = {};
 
-  if (!updated) {
-    throw new ApiError(404, "FILE_NOT_FOUND", "File not found.");
+  if (data.content !== undefined) {
+    updateData.content = data.content;
   }
 
-  return {
-    id: fileId,
-    content,
-  };
+  if (data.name !== undefined) {
+    const trimmedName = data.name.trim();
+    if (!trimmedName || trimmedName.length > 100 || /[/\\]/.test(trimmedName)) {
+      throw new ApiError(
+        400,
+        "INVALID_FILE_NAME",
+        "File name must be 1–100 characters and cannot contain path separators.",
+      );
+    }
+    updateData.name = trimmedName;
+    updateData.language = getLanguageFromFileName(trimmedName);
+  }
+
+  try {
+    const updated = await db.orm.public.ProjectFile
+      .where({ id: fileId, folderId: file.folderId })
+      .update(updateData);
+
+    if (!updated) {
+      throw new ApiError(404, "FILE_NOT_FOUND", "File not found.");
+    }
+
+    return {
+      id: fileId,
+      name: updated.name,
+      content: updated.content,
+      language: updated.language,
+      folderId: updated.folderId,
+    };
+  } catch (error) {
+    if (isUniqueConstraintViolation(error)) {
+      throw new ApiError(
+        409,
+        "PROJECT_FILE_EXISTS",
+        "A file with this name already exists in the folder.",
+      );
+    }
+
+    throw error;
+  }
 };

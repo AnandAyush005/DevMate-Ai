@@ -57,3 +57,40 @@ export const updateProjectFileContent = async(projectId:string, fileId : string,
     const response = await api.patch(`/projects/${projectId}/files/${fileId}`,{content});
     return response.data;
 }
+
+export type CreateProjectFileData = {
+    name: string;
+    folderId?: string;
+    content?: string;
+    language?: string;
+}
+
+export const createProjectFile = async (projectId: string, data: CreateProjectFileData) => {
+    const response = await api.post(`/projects/${projectId}/files`, data);
+    return response.data;
+}
+
+export const renameProjectFile = async (projectId: string, fileId: string, name: string) => {
+    const response = await api.patch(`/projects/${projectId}/files/${fileId}`, { name });
+    return response.data;
+}
+
+export const getProjectFolders = async (projectId: string) => {
+    const response = await api.get(`/projects/${projectId}/folders`);
+    return response.data;
+}
+
+export type CreateProjectFolderData = {
+    name: string;
+    parentFolderId?: string;
+}
+
+export const createProjectFolder = async (projectId: string, data: CreateProjectFolderData) => {
+    const response = await api.post(`/projects/${projectId}/folders`, data);
+    return response.data;
+}
+
+export const renameProjectFolder = async (projectId: string, folderId: string, name: string) => {
+    const response = await api.patch(`/projects/${projectId}/folders/${folderId}`, { name });
+    return response.data;
+}

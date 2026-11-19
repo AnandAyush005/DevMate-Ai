@@ -77,9 +77,10 @@ export const resetPassword = async (req: Request, res: Response) => {
     throw new ApiError(400, "VALIDATION_ERROR", getValidationMessage(parsed.error));
   }
 
+  const token = Array.isArray(req.params.token) ? req.params.token[0]! : req.params.token;
   const session = await resetPasswordService(
     getPasswordResetUserId(req),
-    req.params.token,
+    token,
     parsed.data.password,
   );
   setAuthCookie(res, session.token);
