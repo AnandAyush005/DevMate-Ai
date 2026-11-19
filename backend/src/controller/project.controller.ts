@@ -2,7 +2,11 @@ import type { Request, Response } from "express";
 import { ApiError } from "../utils/api-error.ts";
 import { getAuthenticatedUserId } from "../middlewares/auth.middleware.ts";
 import { createProjectSchema, projectIdSchema, updateProjectSchema } from "../schemas/project.schema.ts";
-import { createProjectFolderSchema } from "../schemas/project-folder.schema.ts";
+import {
+  createProjectFolderSchema,
+  projectFolderIdParamSchema,
+  updateProjectFolderSchema,
+} from "../schemas/project-folder.schema.ts";
 import {
   createProjectService,
   deleteProjectService,
@@ -14,7 +18,8 @@ import {
   getProjectFileContentService,
   updateProjectFileService,
   getProjectFoldersService,
-  createProjectFolderService
+  createProjectFolderService,
+  updateProjectFolderService,
 } from "../services/project.service.ts";
 import { getValidationMessage } from "../utils/validation.ts";
 import { createProjectFileSchema, getProjectFileContentSchema, updateProjectFileSchema } from "../schemas/project-file.schema.ts";
@@ -132,8 +137,7 @@ export const getProjectFileContent = async (
   });
 };
 
-export const updateProjectFileContent = async(req : Request, res : Response)=>{
-
+export const updateProjectFileContent = async (req: Request, res: Response) => {
   const result = getProjectFileContentSchema.safeParse(req.params);
 
   if (!result.success) {
@@ -154,14 +158,57 @@ export const updateProjectFileContent = async(req : Request, res : Response)=>{
     );
   }
 
-  const updateProjectFile = await updateProjectFileService(getAuthenticatedUserId(req), result.data.projectId, result.data.fileId, data.data.content);
+  const updateProjectFile = await updateProjectFileService(
+    getAuthenticatedUserId(req),
+    result.data.projectId,
+    result.data.fileId,
+    data.data
+  );
 
   return res.status(200).json({
-    success : true,
-    data : updateProjectFile
-  })
+    success: true,
+    data: updateProjectFile,
+  });
+};
 
-}
+export const updateProjectFile = updateProjectFileContent;
+
+export const updateProjectFolder = async (
+  req: Request,
+  res: Response,
+) => {
+  const params = projectFolderIdParamSchema.safeParse(req.params);
+
+  if (!params.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(params.error),
+    );
+  }
+
+  const parsed = updateProjectFolderSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(parsed.error),
+    );
+  }
+
+  const folder = await updateProjectFolderService(
+    getAuthenticatedUserId(req),
+    params.data.projectId,
+    params.data.folderId,
+    parsed.data,
+  );
+
+  return res.status(200).json({
+    success: true,
+    data: folder,
+  });
+};
 
 
 

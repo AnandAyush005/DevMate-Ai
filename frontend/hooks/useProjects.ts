@@ -1,4 +1,19 @@
-import { createProjects, deleteProject, getProject, getProjectFileContent, getProjectFiles, updateProject, updateProjectFileContent } from "@/lib/project.api";
+import {
+    createProjectFile,
+    createProjectFolder,
+    createProjects,
+    deleteProject,
+    getProject,
+    getProjectFileContent,
+    getProjectFiles,
+    getProjectFolders,
+    renameProjectFile,
+    renameProjectFolder,
+    updateProject,
+    updateProjectFileContent,
+    type CreateProjectFileData,
+    type CreateProjectFolderData,
+} from "@/lib/project.api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useGetProjects = () =>{
@@ -90,3 +105,75 @@ export const useUpdateProjectFile = (projectId : string, fileId: string) =>{
     }
 )
 }
+
+export const useGetProjectFolders = (projectId: string) => {
+    return useQuery({
+        queryKey: ["projects", projectId, "folders"],
+        queryFn: () => getProjectFolders(projectId),
+        enabled: !!projectId,
+    });
+};
+
+export const useCreateProjectFolder = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "folders", "create"],
+        mutationFn: (data: CreateProjectFolderData) => createProjectFolder(projectId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "folders"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};
+
+export const useRenameProjectFolder = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "folders", "rename"],
+        mutationFn: ({ folderId, name }: { folderId: string; name: string }) =>
+            renameProjectFolder(projectId, folderId, name),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "folders"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};
+
+export const useCreateProjectFile = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "files", "create"],
+        mutationFn: (data: CreateProjectFileData) => createProjectFile(projectId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};
+
+export const useRenameProjectFile = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "files", "rename"],
+        mutationFn: ({ fileId, name }: { fileId: string; name: string }) =>
+            renameProjectFile(projectId, fileId, name),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};

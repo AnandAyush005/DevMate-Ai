@@ -7,7 +7,14 @@ process.env.JWT_SECRET ??= "test-only-jwt-secret-with-at-least-32-bytes";
 process.env.FRONTEND_URL ??= "http://localhost:3000";
 process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/test";
 
-const { createProject, getProject } = await import("../../../src/controller/project.controller.ts");
+const {
+  createProject,
+  getProject,
+  createProjectFile,
+  createProjectFolder,
+  updateProjectFileContent,
+  updateProjectFolder,
+} = await import("../../../src/controller/project.controller.ts");
 
 describe("project controllers", () => {
   it("rejects invalid create bodies before reaching the service", async () => {
@@ -22,6 +29,50 @@ describe("project controllers", () => {
     const request = { params: { projectId: "not-a-uuid" } } as unknown as Request;
     await assert.rejects(
       getProject(request, {} as Response),
+      (error: unknown) => error instanceof ApiError && error.statusCode === 400,
+    );
+  });
+
+  it("rejects invalid file creation payloads before reaching the service", async () => {
+    const request = {
+      params: { projectId: crypto.randomUUID() },
+      body: { name: "   " },
+    } as unknown as Request;
+    await assert.rejects(
+      createProjectFile(request, {} as Response),
+      (error: unknown) => error instanceof ApiError && error.statusCode === 400,
+    );
+  });
+
+  it("rejects invalid folder creation payloads before reaching the service", async () => {
+    const request = {
+      params: { projectId: crypto.randomUUID() },
+      body: { name: "bad/path" },
+    } as unknown as Request;
+    await assert.rejects(
+      createProjectFolder(request, {} as Response),
+      (error: unknown) => error instanceof ApiError && error.statusCode === 400,
+    );
+  });
+
+  it("rejects invalid file update payloads before reaching the service", async () => {
+    const request = {
+      params: { projectId: crypto.randomUUID(), fileId: crypto.randomUUID() },
+      body: {},
+    } as unknown as Request;
+    await assert.rejects(
+      updateProjectFileContent(request, {} as Response),
+      (error: unknown) => error instanceof ApiError && error.statusCode === 400,
+    );
+  });
+
+  it("rejects invalid folder rename payloads before reaching the service", async () => {
+    const request = {
+      params: { projectId: crypto.randomUUID(), folderId: crypto.randomUUID() },
+      body: { name: "invalid/name" },
+    } as unknown as Request;
+    await assert.rejects(
+      updateProjectFolder(request, {} as Response),
       (error: unknown) => error instanceof ApiError && error.statusCode === 400,
     );
   });
