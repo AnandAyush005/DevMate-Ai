@@ -15,6 +15,7 @@
     "src/**/*.ts",
     "tests/**/*.ts",
     "prisma.config.ts",
-    "api/**/*.ts"
+    "api/**/*.ts",
+    "index.ts"
   ]
 }

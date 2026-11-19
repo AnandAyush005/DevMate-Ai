@@ -1,0 +1,491 @@
+[
+  {
+    "id": "table.ProjectFile",
+    "label": "Create table \"ProjectFile\"",
+    "summary": "Creates table \"ProjectFile\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ProjectFile"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ProjectFile\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFile\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ProjectFile\"",
+        "sql": "CREATE TABLE \"public\".\"ProjectFile\" (\n  \"content\" text NOT NULL,\n  \"createdAt\" timestamptz NOT NULL,\n  \"folderId\" text,\n  \"id\" text NOT NULL,\n  \"language\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ProjectFile\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFile\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.ProjectFolder",
+    "label": "Create table \"ProjectFolder\"",
+    "summary": "Creates table \"ProjectFolder\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ProjectFolder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ProjectFolder\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ProjectFolder\"",
+        "sql": "CREATE TABLE \"public\".\"ProjectFolder\" (\n  \"createdAt\" timestamptz NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"parentFolderId\" text,\n  \"path\" text NOT NULL,\n  \"projectId\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ProjectFolder\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.User.passwordResetExpiresAt",
+    "label": "Add column \"passwordResetExpiresAt\" to \"User\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "passwordResetExpiresAt",
+        "table": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"passwordResetExpiresAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "passwordResetExpiresAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"passwordResetExpiresAt\"",
+        "sql": "ALTER TABLE \"public\".\"User\" ADD COLUMN \"passwordResetExpiresAt\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"passwordResetExpiresAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "passwordResetExpiresAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.User.passwordResetTokenHash",
+    "label": "Add column \"passwordResetTokenHash\" to \"User\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "passwordResetTokenHash",
+        "table": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"passwordResetTokenHash\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "passwordResetTokenHash"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"passwordResetTokenHash\"",
+        "sql": "ALTER TABLE \"public\".\"User\" ADD COLUMN \"passwordResetTokenHash\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"passwordResetTokenHash\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "User",
+          "passwordResetTokenHash"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.ProjectFile.ProjectFile_folderId_name_key",
+    "label": "Add unique constraint on \"ProjectFile\" (folderId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "ProjectFile_folderId_name_key",
+        "table": "ProjectFile"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ProjectFile_folderId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFile_folderId_name_key",
+          "public",
+          "\"public\".\"ProjectFile\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"ProjectFile_folderId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"ProjectFile\" ADD CONSTRAINT \"ProjectFile_folderId_name_key\" UNIQUE (\"folderId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"ProjectFile_folderId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFile_folderId_name_key",
+          "public",
+          "\"public\".\"ProjectFile\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.ProjectFolder.ProjectFolder_projectId_path_key",
+    "label": "Add unique constraint on \"ProjectFolder\" (projectId, path)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "ProjectFolder_projectId_path_key",
+        "table": "ProjectFolder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ProjectFolder_projectId_path_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFolder_projectId_path_key",
+          "public",
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"ProjectFolder_projectId_path_key\"",
+        "sql": "ALTER TABLE \"public\".\"ProjectFolder\" ADD CONSTRAINT \"ProjectFolder_projectId_path_key\" UNIQUE (\"projectId\", \"path\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"ProjectFolder_projectId_path_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFolder_projectId_path_key",
+          "public",
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ProjectFile.ProjectFile_folderId_idx_5985e562",
+    "label": "Create index \"ProjectFile_folderId_idx_5985e562\" on \"ProjectFile\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ProjectFile_folderId_idx_5985e562",
+        "table": "ProjectFile"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ProjectFile_folderId_idx_5985e562\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFile_folderId_idx_5985e562\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ProjectFile_folderId_idx_5985e562\"",
+        "sql": "CREATE INDEX \"ProjectFile_folderId_idx_5985e562\" ON \"public\".\"ProjectFile\" (\"folderId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ProjectFile_folderId_idx_5985e562\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFile_folderId_idx_5985e562\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ProjectFolder.ProjectFolder_parentFolderId_idx_66fef1f5",
+    "label": "Create index \"ProjectFolder_parentFolderId_idx_66fef1f5\" on \"ProjectFolder\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ProjectFolder_parentFolderId_idx_66fef1f5",
+        "table": "ProjectFolder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ProjectFolder_parentFolderId_idx_66fef1f5\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFolder_parentFolderId_idx_66fef1f5\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ProjectFolder_parentFolderId_idx_66fef1f5\"",
+        "sql": "CREATE INDEX \"ProjectFolder_parentFolderId_idx_66fef1f5\" ON \"public\".\"ProjectFolder\" (\"parentFolderId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ProjectFolder_parentFolderId_idx_66fef1f5\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFolder_parentFolderId_idx_66fef1f5\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ProjectFolder.ProjectFolder_projectId_idx_a96e4d92",
+    "label": "Create index \"ProjectFolder_projectId_idx_a96e4d92\" on \"ProjectFolder\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ProjectFolder_projectId_idx_a96e4d92",
+        "table": "ProjectFolder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ProjectFolder_projectId_idx_a96e4d92\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFolder_projectId_idx_a96e4d92\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ProjectFolder_projectId_idx_a96e4d92\"",
+        "sql": "CREATE INDEX \"ProjectFolder_projectId_idx_a96e4d92\" ON \"public\".\"ProjectFolder\" (\"projectId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ProjectFolder_projectId_idx_a96e4d92\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ProjectFolder_projectId_idx_a96e4d92\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ProjectFile.ProjectFile_folderId_fkey",
+    "label": "Add foreign key \"ProjectFile_folderId_fkey\" on \"ProjectFile\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ProjectFile_folderId_fkey",
+        "table": "ProjectFile"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ProjectFile_folderId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFile_folderId_fkey",
+          "public",
+          "\"public\".\"ProjectFile\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ProjectFile_folderId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ProjectFile\"\nADD CONSTRAINT \"ProjectFile_folderId_fkey\"\nFOREIGN KEY (\"folderId\")\nREFERENCES \"public\".\"ProjectFolder\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ProjectFile_folderId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFile_folderId_fkey",
+          "public",
+          "\"public\".\"ProjectFile\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ProjectFolder.ProjectFolder_projectId_fkey",
+    "label": "Add foreign key \"ProjectFolder_projectId_fkey\" on \"ProjectFolder\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ProjectFolder_projectId_fkey",
+        "table": "ProjectFolder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ProjectFolder_projectId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFolder_projectId_fkey",
+          "public",
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ProjectFolder_projectId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ProjectFolder\"\nADD CONSTRAINT \"ProjectFolder_projectId_fkey\"\nFOREIGN KEY (\"projectId\")\nREFERENCES \"public\".\"Project\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ProjectFolder_projectId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFolder_projectId_fkey",
+          "public",
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ProjectFolder.ProjectFolder_parentFolderId_fkey",
+    "label": "Add foreign key \"ProjectFolder_parentFolderId_fkey\" on \"ProjectFolder\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ProjectFolder_parentFolderId_fkey",
+        "table": "ProjectFolder"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ProjectFolder_parentFolderId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFolder_parentFolderId_fkey",
+          "public",
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ProjectFolder_parentFolderId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ProjectFolder\"\nADD CONSTRAINT \"ProjectFolder_parentFolderId_fkey\"\nFOREIGN KEY (\"parentFolderId\")\nREFERENCES \"public\".\"ProjectFolder\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ProjectFolder_parentFolderId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ProjectFolder_parentFolderId_fkey",
+          "public",
+          "\"public\".\"ProjectFolder\""
+        ]
+      }
+    ]
+  }
+]
