@@ -3,7 +3,10 @@
   "version": 2,
   "functions": {
     "api/index.ts": {
-      "includeFiles": "src/**"
+      "includeFiles": [
+        "src/**/*.ts",
+        "src/**/*.json"
+      ]
     }
   },
   "rewrites": [

@@ -26,6 +26,7 @@ type Project = {
 const users = new Map<string, User>();
 const projects = new Map<string, Project>();
 const mailCalls: { email: string; resetUrl: string }[] = [];
+let healthProjectQueries = 0;
 
 const matches = <T extends object>(record: T, where: Partial<T>) =>
   Object.entries(where).every(([key, value]) => record[key as keyof T] === value);
@@ -75,7 +76,10 @@ const db = {
         },
       },
       Project: {
-        first: async () => [...projects.values()][0] ?? null,
+        first: async () => {
+          healthProjectQueries += 1;
+          return [...projects.values()][0] ?? null;
+        },
         create: async (data: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
           if (
             [...projects.values()].some(
@@ -165,6 +169,7 @@ describe("API routes", () => {
     users.clear();
     projects.clear();
     mailCalls.length = 0;
+    healthProjectQueries = 0;
   });
 
   const request = (path: string, init?: RequestInit) => fetch(`${baseUrl}${path}`, init);
@@ -193,6 +198,20 @@ describe("API routes", () => {
     const health = await request("/api/v1/health");
     assert.equal(health.status, 200);
     assert.equal((await health.json() as { data: { status: string } }).data.status, "ok");
+    assert.equal(healthProjectQueries, 0);
+
+    const frontendOrigin = new URL(process.env.FRONTEND_URL!).origin;
+    const preflight = await request("/api/v1/auth/forgot-password", {
+      method: "OPTIONS",
+      headers: {
+        origin: frontendOrigin,
+        "access-control-request-method": "POST",
+        "access-control-request-headers": "content-type",
+      },
+    });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get("access-control-allow-origin"), frontendOrigin);
+    assert.equal(preflight.headers.get("access-control-allow-credentials"), "true");
 
     const missingAuth = await request("/api/v1/projects");
     assert.equal(missingAuth.status, 401);
