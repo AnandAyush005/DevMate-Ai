@@ -6,6 +6,7 @@ docker-compose.yml
 .env
 .env.local
 .env.*.local
+.env.*
 
 # Next.js
 .next/
