@@ -13,8 +13,8 @@ export const setAuthCookie = (res: Response, token: string) => {
 
   res.cookie(authConfig.cookieName, token, {
     httpOnly: true,
-    secure: env.cookieSecure,
-    sameSite: env.cookieSameSite,
+    secure: env.cookie.secure,
+    sameSite: env.cookie.sameSite,
     path: "/",
     maxAge: authConfig.tokenLifetimeSeconds * 1000,
   });
