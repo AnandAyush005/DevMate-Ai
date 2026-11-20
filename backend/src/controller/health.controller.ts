@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { healthCheckService } from "../services/health.service.ts";
+import { healthCheckService } from "../services/health.service.js";
 
 export const healthCheck = async (_req: Request, res: Response) => {
   const health = healthCheckService();

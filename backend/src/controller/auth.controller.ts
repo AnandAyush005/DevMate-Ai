@@ -1,22 +1,22 @@
 import type { Request, Response } from "express";
-import { ApiError } from "../utils/api-error.ts";
-import { setAuthCookie } from "../config/auth-cookie.ts";
-import { getAuthenticatedUserId } from "../middlewares/auth.middleware.ts";
-import { getPasswordResetUserId } from "../middlewares/password-reset.middleware.ts";
+import { ApiError } from "../utils/api-error.js";
+import { setAuthCookie } from "../config/auth-cookie.js";
+import { getAuthenticatedUserId } from "../middlewares/auth.middleware.js";
+import { getPasswordResetUserId } from "../middlewares/password-reset.middleware.js";
 import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
-} from "../schemas/auth.schema.ts";
+} from "../schemas/auth.schema.js";
 import {
   getCurrentUserService,
   loginUserService,
   registerUserService,
   requestPasswordResetService,
   resetPasswordService,
-} from "../services/auth.service.ts";
-import { getValidationMessage } from "../utils/validation.ts";
+} from "../services/auth.service.js";
+import { getValidationMessage } from "../utils/validation.js";
 
 export const register = async (req: Request, res: Response) => {
   const parsed = registerSchema.safeParse(req.body);

@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-import { ApiError } from "../utils/api-error.ts";
-import { getAuthenticatedUserId } from "../middlewares/auth.middleware.ts";
-import { createProjectSchema, projectIdSchema, updateProjectSchema } from "../schemas/project.schema.ts";
+import { ApiError } from "../utils/api-error.js";
+import { getAuthenticatedUserId } from "../middlewares/auth.middleware.js";
+import { createProjectSchema, projectIdSchema, updateProjectSchema } from "../schemas/project.schema.js";
 import {
   createProjectFolderSchema,
   projectFolderIdParamSchema,
   updateProjectFolderSchema,
-} from "../schemas/project-folder.schema.ts";
+} from "../schemas/project-folder.schema.js";
 import {
   createProjectService,
   deleteProjectService,
@@ -20,9 +20,9 @@ import {
   getProjectFoldersService,
   createProjectFolderService,
   updateProjectFolderService,
-} from "../services/project.service.ts";
-import { getValidationMessage } from "../utils/validation.ts";
-import { createProjectFileSchema, getProjectFileContentSchema, updateProjectFileSchema } from "../schemas/project-file.schema.ts";
+} from "../services/project.service.js";
+import { getValidationMessage } from "../utils/validation.js";
+import { createProjectFileSchema, getProjectFileContentSchema, updateProjectFileSchema } from "../schemas/project-file.schema.js";
 
 export const createProject = async (req: Request, res: Response) => {
   const parsed = createProjectSchema.safeParse(req.body);

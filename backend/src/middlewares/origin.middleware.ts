@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
-import { env } from "../config/env.ts";
-import { ApiError } from "../utils/api-error.ts";
+import { env } from "../config/env.js";
+import { ApiError } from "../utils/api-error.js";
 
 export const verifyRequestOrigin: RequestHandler = (req, _res, next) => {
   const origin = req.get("origin");

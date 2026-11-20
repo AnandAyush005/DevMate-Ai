@@ -7,10 +7,10 @@ import {
   register,
   requestPasswordReset,
   resetPassword,
-} from "../controller/auth.controller.ts";
-import { authenticate } from "../middlewares/auth.middleware.ts";
-import { authorizePasswordReset } from "../middlewares/password-reset.middleware.ts";
-import { verifyRequestOrigin } from "../middlewares/origin.middleware.ts";
+} from "../controller/auth.controller.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { authorizePasswordReset } from "../middlewares/password-reset.middleware.js";
+import { verifyRequestOrigin } from "../middlewares/origin.middleware.js";
 
 const authRouter = Router();
 

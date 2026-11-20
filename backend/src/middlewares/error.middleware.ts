@@ -1,5 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
-import { ApiError } from "../utils/api-error.ts";
+import { ApiError } from "../utils/api-error.js";
 
 export const notFoundMiddleware: RequestHandler = (_req, res) =>
   res.status(404).json({

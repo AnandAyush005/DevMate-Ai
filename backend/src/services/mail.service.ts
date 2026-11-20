@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
-import { env } from "../config/env.ts";
-import { ApiError } from "../utils/api-error.ts";
+import { env } from "../config/env.js";
+import { ApiError } from "../utils/api-error.js";
 
 
 //@ts-ignore

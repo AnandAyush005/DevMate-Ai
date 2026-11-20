@@ -1,8 +1,8 @@
 import type { Request, RequestHandler } from "express";
-import { ApiError } from "../utils/api-error.ts";
-import { resetPasswordTokenParamSchema } from "../schemas/auth.schema.ts";
-import { getPasswordResetUserIdService } from "../services/auth.service.ts";
-import { getValidationMessage } from "../utils/validation.ts";
+import { ApiError } from "../utils/api-error.js";
+import { resetPasswordTokenParamSchema } from "../schemas/auth.schema.js";
+import { getPasswordResetUserIdService } from "../services/auth.service.js";
+import { getValidationMessage } from "../utils/validation.js";
 
 export const authorizePasswordReset: RequestHandler = async (req, _res, next) => {
   try {

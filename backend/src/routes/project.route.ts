@@ -12,9 +12,9 @@ import {
   createProjectFolder,
   getProjectFolders,
   updateProjectFolder,
-} from "../controller/project.controller.ts";
-import { authenticate } from "../middlewares/auth.middleware.ts";
-import { verifyRequestOrigin } from "../middlewares/origin.middleware.ts";
+} from "../controller/project.controller.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { verifyRequestOrigin } from "../middlewares/origin.middleware.js";
 
 const projectRouter = Router();
 

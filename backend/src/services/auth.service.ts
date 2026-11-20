@@ -1,14 +1,14 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import type { z } from "zod";
-import { ApiError } from "../utils/api-error.ts";
-import { env } from "../config/env.ts";
-import { authConfig } from "../config/auth.ts";
-import { db } from "../prisma/db.ts";
-import { loginSchema, registerSchema } from "../schemas/auth.schema.ts";
-import { createAuthToken } from "./auth-token.service.ts";
-import { hashPassword, verifyPassword } from "./password.service.ts";
-import { isUniqueConstraintViolation } from "./database-error.service.ts";
-import { sendPasswordResetEmail } from "./mail.service.ts";
+import { ApiError } from "../utils/api-error.js";
+import { env } from "../config/env.js";
+import { authConfig } from "../config/auth.js";
+import { db } from "../prisma/db.js";
+import { loginSchema, registerSchema } from "../schemas/auth.schema.js";
+import { createAuthToken } from "./auth-token.service.js";
+import { hashPassword, verifyPassword } from "./password.service.js";
+import { isUniqueConstraintViolation } from "./database-error.service.js";
+import { sendPasswordResetEmail } from "./mail.service.js";
 
 type RegistrationInput = z.infer<typeof registerSchema>;
 type LoginInput = z.infer<typeof loginSchema>;

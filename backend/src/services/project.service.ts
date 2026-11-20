@@ -1,13 +1,13 @@
 
 import type { z } from "zod";
-import { ApiError } from "../utils/api-error.ts";
-import { db } from "../prisma/db.ts";
+import { ApiError } from "../utils/api-error.js";
+import { db } from "../prisma/db.js";
 import {
   createProjectSchema,
   updateProjectSchema,
-} from "../schemas/project.schema.ts";
-import { isUniqueConstraintViolation } from "./database-error.service.ts";
-import { createProjectFileSchema } from "../schemas/project-file.schema.ts";
+} from "../schemas/project.schema.js";
+import { isUniqueConstraintViolation } from "./database-error.service.js";
+import { createProjectFileSchema } from "../schemas/project-file.schema.js";
 
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 type UpdateProjectInput = z.infer<typeof updateProjectSchema>;

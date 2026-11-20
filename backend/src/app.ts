@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
-import { errorMiddleware, notFoundMiddleware } from "./middlewares/error.middleware.ts";
-import authRouter from "./routes/auth.route.ts";
-import healthRouter from "./routes/health.route.ts";
-import projectRouter from "./routes/project.route.ts";
+import { errorMiddleware, notFoundMiddleware } from "./middlewares/error.middleware.js";
+import authRouter from "./routes/auth.route.js";
+import healthRouter from "./routes/health.route.js";
+import projectRouter from "./routes/project.route.js";
 
 const FRONTEND_ORIGIN = "https://dev-mate-ai-frontend.vercel.app";
 

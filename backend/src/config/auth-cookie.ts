@@ -1,6 +1,6 @@
 import type { Response } from "express";
-import { authConfig } from "./auth.ts";
-import { env } from "./env.ts";
+import { authConfig } from "./auth.js";
+import { env } from "./env.js";
 
 export const setAuthCookie = (res: Response, token: string) => {
 

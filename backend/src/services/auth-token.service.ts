@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { authConfig } from "../config/auth.ts";
+import { authConfig } from "../config/auth.js";
 
 const encodeJson = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
 
