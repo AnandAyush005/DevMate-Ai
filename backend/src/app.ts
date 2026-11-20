@@ -4,14 +4,12 @@ import { errorMiddleware, notFoundMiddleware } from "./middlewares/error.middlew
 import authRouter from "./routes/auth.route.js";
 import healthRouter from "./routes/health.route.js";
 import projectRouter from "./routes/project.route.js";
-import { env } from "./config/env.ts";
-
 
 const app = express();
 
 app.use(
   cors({
-    origin: env.frontendOrigin,
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   }),
 );
