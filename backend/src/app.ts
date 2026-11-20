@@ -1,14 +1,20 @@
 import express from "express";
 import cors from "cors";
-import { env } from "./config/env.ts";
 import { errorMiddleware, notFoundMiddleware } from "./middlewares/error.middleware.ts";
 import authRouter from "./routes/auth.route.ts";
 import healthRouter from "./routes/health.route.ts";
 import projectRouter from "./routes/project.route.ts";
 
+const FRONTEND_ORIGIN = "https://dev-mate-ai-frontend.vercel.app";
+
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: FRONTEND_ORIGIN,
+    credentials: true,
+  }),
+);
 
 app.use(express.json({ limit: "32kb" }));
 

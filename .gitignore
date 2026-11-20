@@ -15,6 +15,7 @@ docker-compose.yml
 dist/
 build/
 .vercel/
+backend/api/index.js
 
 # Logs
 *.log

@@ -15,7 +15,7 @@
     "src/**/*.ts",
     "tests/**/*.ts",
     "prisma.config.ts",
-    "api/**/*.ts",
+    "vercel-entry.ts",
     "index.ts"
   ]
 }
