@@ -5,6 +5,7 @@
     "api/index.ts": {
       "includeFiles": "src/**/*"
     }
+   
   },
   "rewrites": [
     {
