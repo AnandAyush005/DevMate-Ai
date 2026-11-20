@@ -4,14 +4,14 @@ import { errorMiddleware, notFoundMiddleware } from "./middlewares/error.middlew
 import authRouter from "./routes/auth.route.js";
 import healthRouter from "./routes/health.route.js";
 import projectRouter from "./routes/project.route.js";
+import { env } from "./config/env.ts";
 
-const FRONTEND_ORIGIN = "https://dev-mate-ai-frontend.vercel.app";
 
 const app = express();
 
 app.use(
   cors({
-    origin: FRONTEND_ORIGIN,
+    origin: env.frontendOrigin,
     credentials: true,
   }),
 );
