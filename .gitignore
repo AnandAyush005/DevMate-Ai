@@ -20,6 +20,7 @@ backend/api/index.js
 # Logs
 *.log
 
+
 *.yaml
 
 #agents
