@@ -8,8 +8,9 @@
   },
   "scripts": {
     "dev": "bun run --watch src/server.ts",
-    "build": "tsc --noEmit",
-    "vercel-build": "esbuild index.ts --bundle --platform=node --target=node24 --format=esm --outfile=api/index.js --packages=external",
+    "build": "esbuild index.ts --bundle --platform=node --target=node22 --format=esm --outfile=api/index.js --packages=external",
+    "vercel-build": "npm run build",
+    "typecheck": "tsc --noEmit",
     "start": "bun run src/server.ts",
     "test": "node --experimental-transform-types --experimental-test-module-mocks --test \"tests/unit/**/*.test.ts\"",
     "db:migrate": "prisma db migrate",
@@ -17,7 +18,7 @@
     "db:plan": "prisma migration plan",
     "db:status": "prisma migration status",
     "db:emit": "prisma contract emit",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "sh -c 'test \"$VERCEL\" = \"1\" && exit 0 || (prisma skills sync || exit 0)'"
   },
   "keywords": [],
   "author": "",
@@ -33,11 +34,11 @@
     "nodemailer": "^10.6.0",
     "prisma": "^8.0.0-rc.17",
     "process": "^0.11.10",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "esbuild": "^0.28.2"
   },
   "devDependencies": {
     "@types/nodemailer": "^8.0.2",
-    "esbuild": "^0.28.2",
     "typescript": "^6.0.3"
   }
 }

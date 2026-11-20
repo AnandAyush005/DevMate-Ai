@@ -1,11 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "buildCommand": "npm run build",
   "functions": {
-    "api/index.ts": {
-      "includeFiles": "src/**/*"
+    "api/index.js": {
+      "maxDuration": 30
     }
-   
   },
   "rewrites": [
     {
@@ -14,4 +14,3 @@
     }
   ]
 }
-
