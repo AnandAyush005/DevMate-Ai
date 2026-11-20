@@ -12,6 +12,8 @@ import {
   projectIdSchema,
   updateProjectSchema,
 } from "../../../src/schemas/project.schema.ts";
+import { updateProjectFileSchema } from "../../../src/schemas/project-file.schema.ts";
+import { updateProjectFolderSchema } from "../../../src/schemas/project-folder.schema.ts";
 
 describe("request schemas", () => {
   it("normalizes registration and login emails and rejects extra properties", () => {
@@ -64,5 +66,16 @@ describe("request schemas", () => {
     assert.equal(updateProjectSchema.safeParse({ description: null }).success, true);
     assert.equal(projectIdSchema.safeParse(crypto.randomUUID()).success, true);
     assert.equal(projectIdSchema.safeParse("invalid").success, false);
+  });
+
+  it("accepts file and folder relocation payloads and rejects empty updates", () => {
+    const folderId = crypto.randomUUID();
+    assert.deepEqual(updateProjectFileSchema.parse({ folderId }), { folderId });
+    assert.equal(updateProjectFileSchema.safeParse({}).success, false);
+    assert.deepEqual(
+      updateProjectFolderSchema.parse({ parentFolderId: folderId }),
+      { parentFolderId: folderId },
+    );
+    assert.equal(updateProjectFolderSchema.safeParse({}).success, false);
   });
 });

@@ -3,12 +3,16 @@ import {
     createProjectFolder,
     createProjects,
     deleteProject,
+    deleteProjectFile,
+    deleteProjectFolder,
     getProject,
     getProjectFileContent,
     getProjectFiles,
     getProjectFolders,
     renameProjectFile,
     renameProjectFolder,
+    relocateProjectFile,
+    relocateProjectFolder,
     updateProject,
     updateProjectFileContent,
     type CreateProjectFileData,
@@ -171,6 +175,75 @@ export const useRenameProjectFile = (projectId: string) => {
         mutationFn: ({ fileId, name }: { fileId: string; name: string }) =>
             renameProjectFile(projectId, fileId, name),
         onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};
+
+export const useRelocateProjectFile = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "files", "relocate"],
+        mutationFn: ({ fileId, folderId }: { fileId: string; folderId: string }) =>
+            relocateProjectFile(projectId, fileId, folderId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};
+
+export const useDeleteProjectFile = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "files", "delete"],
+        mutationFn: (fileId: string) => deleteProjectFile(projectId, fileId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};
+
+export const useRelocateProjectFolder = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "folders", "relocate"],
+        mutationFn: ({
+            folderId,
+            parentFolderId,
+        }: {
+            folderId: string;
+            parentFolderId: string;
+        }) => relocateProjectFolder(projectId, folderId, parentFolderId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "folders"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "files"],
+            });
+        },
+    });
+};
+
+export const useDeleteProjectFolder = (projectId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["projects", projectId, "folders", "delete"],
+        mutationFn: (folderId: string) => deleteProjectFolder(projectId, folderId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["projects", projectId, "folders"],
+            });
             queryClient.invalidateQueries({
                 queryKey: ["projects", projectId, "files"],
             });

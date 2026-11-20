@@ -24,6 +24,10 @@ import {
   useCreateProjectFolder,
   useRenameProjectFile,
   useRenameProjectFolder,
+  useDeleteProjectFile,
+  useDeleteProjectFolder,
+  useRelocateProjectFile,
+  useRelocateProjectFolder,
 } from "@/hooks/useProjects";
 
 import FileTree from "./FileTree";
@@ -42,6 +46,16 @@ type FileSelection = {
   id: string;
   name: string;
   path: string;
+};
+
+type ItemActionDialog = {
+  mode: "relocate" | "delete";
+  type: "file" | "folder";
+  id: string;
+  name: string;
+  currentFolderId?: string;
+  currentPath?: string;
+  targetFolderId: string;
 };
 
 export default function ProjectWorkspace({
@@ -73,6 +87,10 @@ export default function ProjectWorkspace({
   const createFolderMutation = useCreateProjectFolder(projectId);
   const renameFileMutation = useRenameProjectFile(projectId);
   const renameFolderMutation = useRenameProjectFolder(projectId);
+  const relocateFileMutation = useRelocateProjectFile(projectId);
+  const relocateFolderMutation = useRelocateProjectFolder(projectId);
+  const deleteFileMutation = useDeleteProjectFile(projectId);
+  const deleteFolderMutation = useDeleteProjectFolder(projectId);
 
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
@@ -98,6 +116,8 @@ export default function ProjectWorkspace({
     id: "",
     name: "",
   });
+  const [itemActionDialog, setItemActionDialog] =
+    useState<ItemActionDialog | null>(null);
 
   const [savedContents, setSavedContents] = useState<
     Record<string, string>
@@ -341,6 +361,147 @@ const handleFileClose = (fileId: string) => {
       type: node.type,
       id: node.id,
       name: node.name,
+    });
+  };
+
+  const handleOpenItemAction = (
+    node: FileTreeNode,
+    mode: ItemActionDialog["mode"],
+  ) => {
+    if (!node.id) return;
+
+    const rootFolderId = projectFolders.find(
+      (folder: { path: string }) => folder.path === "/",
+    )?.id;
+    const folder = projectFolders.find(
+      (projectFolder: { id: string }) => projectFolder.id === node.id,
+    );
+    const currentFolderId =
+      node.type === "file"
+        ? node.folderId ?? rootFolderId
+        : folder?.parentFolderId ?? rootFolderId;
+
+    setItemActionDialog({
+      mode,
+      type: node.type,
+      id: node.id,
+      name: node.name,
+      currentFolderId,
+      currentPath: node.type === "folder" ? node.path : undefined,
+      targetFolderId: currentFolderId ?? "",
+    });
+  };
+
+  const handleItemActionSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!itemActionDialog) return;
+
+    const action = itemActionDialog;
+
+    if (action.mode === "relocate") {
+      if (!action.targetFolderId) {
+        toast.error("Unable to find the project root folder");
+        return;
+      }
+
+      const onSuccess = () => {
+        toast.success(
+          `${action.type === "file" ? "File" : "Folder"} moved successfully`,
+        );
+        setItemActionDialog(null);
+      };
+      const onError = (error: unknown) => {
+        const message =
+          axios.isAxiosError(error) && error.response?.data?.error?.message
+            ? error.response.data.error.message
+            : `Failed to move ${action.type}`;
+        toast.error(message);
+      };
+
+      if (action.type === "file") {
+        relocateFileMutation.mutate(
+          { fileId: action.id, folderId: action.targetFolderId },
+          { onSuccess, onError },
+        );
+      } else {
+        relocateFolderMutation.mutate(
+          { folderId: action.id, parentFolderId: action.targetFolderId },
+          { onSuccess, onError },
+        );
+      }
+      return;
+    }
+
+    const removeWorkspaceFiles = (fileIds: string[]) => {
+      const removedIds = new Set(fileIds);
+      setFiles((current) =>
+        current.filter((file) => !removedIds.has(file.id)),
+      );
+      setOpenFiles((current) => current.filter((id) => !removedIds.has(id)));
+      setLoadedFileIds((current) =>
+        current.filter((id) => !removedIds.has(id)),
+      );
+      setSavedContents((current) => {
+        const next = { ...current };
+        for (const id of removedIds) {
+          delete next[id];
+        }
+        return next;
+      });
+      setSelectedFile((current) =>
+        current && removedIds.has(current.id) ? null : current,
+      );
+    };
+
+    const onDeleteSuccess = (fileIds: string[], folderIds: Set<string>) => {
+      removeWorkspaceFiles(fileIds);
+      if (selectedFolderId && folderIds.has(selectedFolderId)) {
+        setSelectedFolderId(null);
+      }
+      toast.success(
+        `${action.type === "file" ? "File" : "Folder"} deleted successfully`,
+      );
+      setItemActionDialog(null);
+    };
+    const onDeleteError = (error: unknown) => {
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.error?.message
+          ? error.response.data.error.message
+          : `Failed to delete ${action.type}`;
+      toast.error(message);
+    };
+
+    if (action.type === "file") {
+      deleteFileMutation.mutate(action.id, {
+        onSuccess: () => onDeleteSuccess([action.id], new Set<string>()),
+        onError: onDeleteError,
+      });
+      return;
+    }
+
+    const folderPath =
+      projectFolders.find(
+        (folder: { id: string }) => folder.id === action.id,
+      )?.path ?? action.currentPath;
+    const deletedFolders = new Set<string>(
+      projectFolders
+        .filter(
+          (folder: { id: string; path: string }) =>
+            folder.id === action.id ||
+            (!!folderPath && folder.path.startsWith(folderPath)),
+        )
+        .map((folder: { id: string }) => folder.id),
+    );
+    const deletedFileIds = (projectFiles ?? [])
+      .filter(
+        (file: { id: string; folderId?: string }) =>
+          file.folderId && deletedFolders.has(file.folderId),
+      )
+      .map((file: { id: string }) => file.id);
+
+    deleteFolderMutation.mutate(action.id, {
+      onSuccess: () => onDeleteSuccess(deletedFileIds, deletedFolders),
+      onError: onDeleteError,
     });
   };
 
@@ -677,6 +838,8 @@ const handleFileClose = (fileId: string) => {
                   onSelectedFile={handleFileSelect}
                   selectedFile={selectedFile ?? undefined}
                   onRename={handleOpenRename}
+                  onRelocate={(node) => handleOpenItemAction(node, "relocate")}
+                  onDelete={(node) => handleOpenItemAction(node, "delete")}
                   onCreateInFolder={handleOpenCreate}
                   selectedFolderId={selectedFolderId}
                   onSelectFolder={setSelectedFolderId}
@@ -964,6 +1127,105 @@ const handleFileClose = (fileId: string) => {
               {renameFileMutation.isPending || renameFolderMutation.isPending
                 ? "Renaming..."
                 : "Rename"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog
+      open={itemActionDialog !== null}
+      onOpenChange={(open) => {
+        if (!open) setItemActionDialog(null);
+      }}
+    >
+      <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
+            {itemActionDialog?.mode === "relocate"
+              ? `Move ${itemActionDialog.type}`
+              : `Delete ${itemActionDialog?.type}`}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-zinc-400">
+            {itemActionDialog?.mode === "relocate"
+              ? `Choose a new location for ${itemActionDialog.name}.`
+              : itemActionDialog?.type === "folder"
+                ? `This permanently deletes ${itemActionDialog.name} and all nested folders and files.`
+                : `This permanently deletes ${itemActionDialog?.name} and discards any unsaved edits.`}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleItemActionSubmit} className="space-y-4 py-2">
+          {itemActionDialog?.mode === "relocate" && (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                Destination
+              </label>
+              <select
+                value={itemActionDialog.targetFolderId}
+                onChange={(event) =>
+                  setItemActionDialog((current) =>
+                    current
+                      ? { ...current, targetFolderId: event.target.value }
+                      : current,
+                  )
+                }
+                className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+              >
+                {projectFolders
+                  .filter(
+                    (folder: { id: string; path: string }) =>
+                      itemActionDialog.type !== "folder" ||
+                      folder.path === "/" ||
+                      (folder.id !== itemActionDialog.id &&
+                        !folder.path.startsWith(
+                          itemActionDialog.currentPath ?? "",
+                        )),
+                  )
+                  .map((folder: { id: string; path: string }) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.path === "/" ? "/" : folder.path}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setItemActionDialog(null)}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={
+                deleteFileMutation.isPending ||
+                deleteFolderMutation.isPending ||
+                relocateFileMutation.isPending ||
+                relocateFolderMutation.isPending ||
+                (itemActionDialog?.mode === "relocate" &&
+                  itemActionDialog.targetFolderId ===
+                    itemActionDialog.currentFolderId)
+              }
+              className={`inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                itemActionDialog?.mode === "delete"
+                  ? "bg-red-600 hover:bg-red-500"
+                  : "bg-primary text-primary-foreground hover:opacity-90"
+              }`}
+            >
+              {deleteFileMutation.isPending ||
+              deleteFolderMutation.isPending ||
+              relocateFileMutation.isPending ||
+              relocateFolderMutation.isPending
+                ? itemActionDialog?.mode === "delete"
+                  ? "Deleting..."
+                  : "Moving..."
+                : itemActionDialog?.mode === "delete"
+                  ? "Delete"
+                  : "Move"}
             </button>
           </DialogFooter>
         </form>

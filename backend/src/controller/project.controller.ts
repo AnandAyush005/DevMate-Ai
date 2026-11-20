@@ -15,6 +15,8 @@ import {
   getProjectsService,
   updateProjectService,
   createProjectFileService,
+  deleteProjectFileService,
+  deleteProjectFolderService,
   getProjectFileContentService,
   updateProjectFileService,
   getProjectFoldersService,
@@ -173,6 +175,29 @@ export const updateProjectFileContent = async (req: Request, res: Response) => {
 
 export const updateProjectFile = updateProjectFileContent;
 
+export const deleteProjectFile = async (req: Request, res: Response) => {
+  const result = getProjectFileContentSchema.safeParse(req.params);
+
+  if (!result.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(result.error),
+    );
+  }
+
+  await deleteProjectFileService(
+    getAuthenticatedUserId(req),
+    result.data.projectId,
+    result.data.fileId,
+  );
+
+  return res.status(200).json({
+    success: true,
+    data: { id: result.data.fileId },
+  });
+};
+
 export const updateProjectFolder = async (
   req: Request,
   res: Response,
@@ -207,6 +232,32 @@ export const updateProjectFolder = async (
   return res.status(200).json({
     success: true,
     data: folder,
+  });
+};
+
+export const deleteProjectFolder = async (
+  req: Request,
+  res: Response,
+) => {
+  const params = projectFolderIdParamSchema.safeParse(req.params);
+
+  if (!params.success) {
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      getValidationMessage(params.error),
+    );
+  }
+
+  await deleteProjectFolderService(
+    getAuthenticatedUserId(req),
+    params.data.projectId,
+    params.data.folderId,
+  );
+
+  return res.status(200).json({
+    success: true,
+    data: { id: params.data.folderId },
   });
 };
 

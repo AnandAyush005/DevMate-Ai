@@ -1,6 +1,15 @@
 "use client";
 
-import { File, Folder, FolderOpen, FilePlus, FolderPlus, Pencil } from "lucide-react";
+import {
+  File,
+  Folder,
+  FolderOpen,
+  FilePlus,
+  FolderPlus,
+  Pencil,
+  MoveRight,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 
 export type FileTreeNode = {
@@ -29,6 +38,8 @@ type FileTreeProps = {
   }) => void;
   selectedFile?: SelectedFile;
   onRename?: (node: FileTreeNode) => void;
+  onRelocate?: (node: FileTreeNode) => void;
+  onDelete?: (node: FileTreeNode) => void;
   onCreateInFolder?: (type: "file" | "folder", folderId: string) => void;
   selectedFolderId?: string | null;
   onSelectFolder?: (folderId: string) => void;
@@ -40,6 +51,8 @@ export default function FileTree({
   onSelectedFile,
   selectedFile,
   onRename,
+  onRelocate,
+  onDelete,
   onCreateInFolder,
   selectedFolderId,
   onSelectFolder,
@@ -72,20 +85,50 @@ export default function FileTree({
           </span>
         </div>
 
-        {onRename && (
+        {(onRename || onRelocate || onDelete) && (
           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRename(node);
-              }}
-              title="Rename file"
-              className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
-              aria-label="Rename file"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
+            {onRename && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRename(node);
+                }}
+                title="Rename file"
+                className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                aria-label="Rename file"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onRelocate && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRelocate(node);
+                }}
+                title="Move file"
+                className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                aria-label="Move file"
+              >
+                <MoveRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(node);
+                }}
+                title="Delete file"
+                className="rounded p-1 text-zinc-400 hover:bg-red-900/50 hover:text-red-300"
+                aria-label="Delete file"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -150,19 +193,51 @@ export default function FileTree({
             </>
           )}
 
-          {onRename && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRename(node);
-              }}
-              title="Rename folder"
-              className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
-              aria-label="Rename folder"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
+          {(onRename || onRelocate || onDelete) && (
+            <>
+              {onRename && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRename(node);
+                  }}
+                  title="Rename folder"
+                  className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                  aria-label="Rename folder"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {onRelocate && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRelocate(node);
+                  }}
+                  title="Move folder"
+                  className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                  aria-label="Move folder"
+                >
+                  <MoveRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(node);
+                  }}
+                  title="Delete folder"
+                  className="rounded p-1 text-zinc-400 hover:bg-red-900/50 hover:text-red-300"
+                  aria-label="Delete folder"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -176,6 +251,8 @@ export default function FileTree({
             onSelectedFile={onSelectedFile}
             selectedFile={selectedFile}
             onRename={onRename}
+            onRelocate={onRelocate}
+            onDelete={onDelete}
             onCreateInFolder={onCreateInFolder}
             selectedFolderId={selectedFolderId}
             onSelectFolder={onSelectFolder}
