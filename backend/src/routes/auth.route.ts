@@ -14,7 +14,7 @@ import { verifyRequestOrigin } from "../middlewares/origin.middleware.ts";
 
 const authRouter = Router();
 
-authRouter.post("/register", verifyRequestOrigin, register);
+authRouter.post("/register", register);
 authRouter.post("/login", verifyRequestOrigin, login);
 authRouter.get("/me", authenticate, getMe);
 authRouter.post("/logout", authenticate, logout);
