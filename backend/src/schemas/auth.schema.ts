@@ -20,7 +20,7 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordTokenParamSchema = z
   .string()
   .trim()
-  .min(16)
+  .min(32)
   .max(128)
   .regex(/^[A-Za-z0-9_-]+$/);
 
