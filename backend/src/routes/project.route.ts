@@ -3,6 +3,8 @@ import {
   createProject,
   createProjectFile,
   deleteProject,
+  deleteProjectFile,
+  deleteProjectFolder,
   getProject,
   getProjectFileContent,
   getProjectFiles,
@@ -32,6 +34,12 @@ projectRouter.patch(
   authenticate,
   updateProjectFileContent
 );
+projectRouter.delete(
+  "/:projectId/files/:fileId",
+  verifyRequestOrigin,
+  authenticate,
+  deleteProjectFile,
+);
 
 projectRouter.get(
   "/:projectId/folders",
@@ -51,6 +59,12 @@ projectRouter.patch(
   verifyRequestOrigin,
   authenticate,
   updateProjectFolder,
+);
+projectRouter.delete(
+  "/:projectId/folders/:folderId",
+  verifyRequestOrigin,
+  authenticate,
+  deleteProjectFolder,
 );
 
 export default projectRouter;

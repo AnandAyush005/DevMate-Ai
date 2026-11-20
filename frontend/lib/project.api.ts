@@ -75,6 +75,16 @@ export const renameProjectFile = async (projectId: string, fileId: string, name:
     return response.data;
 }
 
+export const relocateProjectFile = async (projectId: string, fileId: string, folderId: string) => {
+    const response = await api.patch(`/projects/${projectId}/files/${fileId}`, { folderId });
+    return response.data;
+}
+
+export const deleteProjectFile = async (projectId: string, fileId: string) => {
+    const response = await api.delete(`/projects/${projectId}/files/${fileId}`);
+    return response.data;
+}
+
 export const getProjectFolders = async (projectId: string) => {
     const response = await api.get(`/projects/${projectId}/folders`);
     return response.data;
@@ -92,5 +102,15 @@ export const createProjectFolder = async (projectId: string, data: CreateProject
 
 export const renameProjectFolder = async (projectId: string, folderId: string, name: string) => {
     const response = await api.patch(`/projects/${projectId}/folders/${folderId}`, { name });
+    return response.data;
+}
+
+export const relocateProjectFolder = async (projectId: string, folderId: string, parentFolderId: string) => {
+    const response = await api.patch(`/projects/${projectId}/folders/${folderId}`, { parentFolderId });
+    return response.data;
+}
+
+export const deleteProjectFolder = async (projectId: string, folderId: string) => {
+    const response = await api.delete(`/projects/${projectId}/folders/${folderId}`);
     return response.data;
 }

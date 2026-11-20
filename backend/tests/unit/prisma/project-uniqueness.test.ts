@@ -9,6 +9,16 @@ describe("project database contract", () => {
     assert.deepEqual(uniques, [{ columns: ["userId", "name"] }]);
   });
 
+  it("enforces unique file and folder names within their respective folders", () => {
+    const tables = contract.storage.namespaces.public.entries.table;
+    assert.deepEqual(tables.ProjectFile.uniques, [
+      { columns: ["folderId", "name"] },
+    ]);
+    assert.deepEqual(tables.ProjectFolder.uniques, [
+      { columns: ["projectId", "path"] },
+    ]);
+  });
+
   it("migrates away the former global project-name constraint", async () => {
     const migration = await readFile(
       new URL("../../../migrations/app/20260926T1612_project_name_per_user/migration.ts", import.meta.url),

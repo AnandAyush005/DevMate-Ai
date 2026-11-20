@@ -44,8 +44,12 @@ export const updateProjectFileSchema = z
         "File name cannot contain path separators.",
       )
       .optional(),
+    folderId: z.uuid("Invalid folder ID.").optional(),
   })
   .refine(
-    (data) => data.content !== undefined || data.name !== undefined,
-    { message: "At least one of content or name must be provided." },
+    (data) =>
+      data.content !== undefined ||
+      data.name !== undefined ||
+      data.folderId !== undefined,
+    { message: "At least one of content, name, or folder ID must be provided." },
   );
