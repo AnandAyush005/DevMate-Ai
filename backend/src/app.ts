@@ -8,10 +8,7 @@ import projectRouter from "./routes/project.route.ts";
 
 const app = express();
 
-app.use(cors({
-  origin: env.frontendOrigin,
-  credentials: true,
-}));
+app.use(cors());
 
 app.use(express.json({ limit: "32kb" }));
 
