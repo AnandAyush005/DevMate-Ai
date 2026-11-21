@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "types": ["node"],
     "allowImportingTsExtensions" : true,
+    "rewriteRelativeImportExtensions": true,
     "noEmit": true
   },
   "include": [
