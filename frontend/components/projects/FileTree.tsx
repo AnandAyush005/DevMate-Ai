@@ -7,10 +7,50 @@ import {
   FilePlus,
   FolderPlus,
   Pencil,
-  MoveRight,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import type { DragEvent as ReactDragEvent } from "react";
+
+export const DRAG_ITEM_DATA_TYPE = "application/x-devmate-project-item";
+
+export type DraggedProjectItem = {
+  id: string;
+  type: "file" | "folder";
+  name: string;
+  path?: string;
+  folderId?: string;
+};
+
+export const readDraggedItem = (
+  dataTransfer: DataTransfer,
+): DraggedProjectItem | null => {
+  const value =
+    dataTransfer.getData(DRAG_ITEM_DATA_TYPE) ||
+    dataTransfer.getData("text/plain");
+  if (!value) return null;
+
+  try {
+    const item = JSON.parse(value) as Partial<DraggedProjectItem>;
+    if (
+      typeof item.id !== "string" ||
+      typeof item.name !== "string" ||
+      (item.type !== "file" && item.type !== "folder")
+    ) {
+      return null;
+    }
+
+    return {
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      path: item.path,
+      folderId: item.folderId,
+    };
+  } catch {
+    return null;
+  }
+};
 
 export type FileTreeNode = {
   type: "file" | "folder";
@@ -38,8 +78,8 @@ type FileTreeProps = {
   }) => void;
   selectedFile?: SelectedFile;
   onRename?: (node: FileTreeNode) => void;
-  onRelocate?: (node: FileTreeNode) => void;
   onDelete?: (node: FileTreeNode) => void;
+  onDropItem?: (node: FileTreeNode, targetFolderId: string) => void;
   onCreateInFolder?: (type: "file" | "folder", folderId: string) => void;
   selectedFolderId?: string | null;
   onSelectFolder?: (folderId: string) => void;
@@ -51,18 +91,63 @@ export default function FileTree({
   onSelectedFile,
   selectedFile,
   onRename,
-  onRelocate,
   onDelete,
+  onDropItem,
   onCreateInFolder,
   selectedFolderId,
   onSelectFolder,
 }: FileTreeProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isDropTarget, setIsDropTarget] = useState(false);
+
+  const handleDragStart = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (!node.id) return;
+
+    event.dataTransfer.effectAllowed = "move";
+    const item = JSON.stringify({
+      id: node.id,
+      type: node.type,
+      name: node.name,
+      path: node.path,
+      folderId: node.folderId,
+    });
+    event.dataTransfer.setData(DRAG_ITEM_DATA_TYPE, item);
+    event.dataTransfer.setData("text/plain", item);
+  };
+
+  const handleFolderDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setIsDropTarget(true);
+  };
+
+  const handleFolderDragLeave = (event: ReactDragEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+      return;
+    }
+
+    setIsDropTarget(false);
+  };
+
+  const handleFolderDrop = (event: ReactDragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDropTarget(false);
+
+    const draggedItem = readDraggedItem(event.dataTransfer);
+    if (!draggedItem || !node.id || node.type !== "folder") return;
+
+    setIsExpanded(true);
+    onDropItem?.(draggedItem, node.id);
+  };
 
   if (node.type === "file") {
     return (
       <div
-        className={`group flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-zinc-800 ${
+        draggable={Boolean(node.id)}
+        onDragStart={handleDragStart}
+        className={`group flex cursor-grab items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-zinc-800 active:cursor-grabbing ${
           selectedFile?.id === node.id
             ? "bg-zinc-800 text-white font-medium"
             : "text-zinc-300"
@@ -85,7 +170,7 @@ export default function FileTree({
           </span>
         </div>
 
-        {(onRename || onRelocate || onDelete) && (
+        {(onRename || onDelete) && (
           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
             {onRename && (
               <button
@@ -99,20 +184,6 @@ export default function FileTree({
                 aria-label="Rename file"
               >
                 <Pencil className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {onRelocate && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRelocate(node);
-                }}
-                title="Move file"
-                className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
-                aria-label="Move file"
-              >
-                <MoveRight className="h-3.5 w-3.5" />
               </button>
             )}
             {onDelete && (
@@ -138,8 +209,17 @@ export default function FileTree({
   return (
     <div>
       <div
-        className={`group flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium hover:bg-zinc-800 ${
-          selectedFolderId === node.id ? "bg-zinc-800/60 text-white" : "text-zinc-200"
+        draggable={Boolean(node.id)}
+        onDragStart={handleDragStart}
+        onDragOver={handleFolderDragOver}
+        onDragLeave={handleFolderDragLeave}
+        onDrop={handleFolderDrop}
+        className={`group flex cursor-grab items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-zinc-800 active:cursor-grabbing ${
+          isDropTarget
+            ? "bg-amber-500/15 text-amber-100 ring-1 ring-inset ring-amber-400/50"
+            : selectedFolderId === node.id
+              ? "bg-zinc-800/60 text-white"
+              : "text-zinc-200"
         }`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => {
@@ -193,7 +273,7 @@ export default function FileTree({
             </>
           )}
 
-          {(onRename || onRelocate || onDelete) && (
+          {(onRename || onDelete) && (
             <>
               {onRename && (
                 <button
@@ -207,20 +287,6 @@ export default function FileTree({
                   aria-label="Rename folder"
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                </button>
-              )}
-              {onRelocate && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRelocate(node);
-                  }}
-                  title="Move folder"
-                  className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
-                  aria-label="Move folder"
-                >
-                  <MoveRight className="h-3.5 w-3.5" />
                 </button>
               )}
               {onDelete && (
@@ -251,8 +317,8 @@ export default function FileTree({
             onSelectedFile={onSelectedFile}
             selectedFile={selectedFile}
             onRename={onRename}
-            onRelocate={onRelocate}
             onDelete={onDelete}
+            onDropItem={onDropItem}
             onCreateInFolder={onCreateInFolder}
             selectedFolderId={selectedFolderId}
             onSelectFolder={onSelectFolder}

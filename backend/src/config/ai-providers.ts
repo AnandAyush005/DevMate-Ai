@@ -13,12 +13,14 @@ const groqApiKeys = [
 
 export const googleProviders = geminiApiKeys.map((apiKey, index) => ({
   id: `gemini-${index + 1}`,
+  family: "google" as const,
   provider: createGoogleGenerativeAI({ apiKey }),
   modelId: "gemini-3.8-flash",
 }));
 
 export const groqProviders = groqApiKeys.map((apiKey, index) => ({
   id: `groq-${index + 1}`,
+  family: "groq" as const,
   provider: createGroq({ apiKey }),
   modelId: "openai/gpt-oss-20b",
 }));

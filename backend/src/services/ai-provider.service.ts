@@ -4,6 +4,8 @@ import {
   groqProviders,
 } from "../config/ai-providers.ts";
 
+type ProviderFamily = "google" | "groq";
+
 const allProviders = [
   ...googleProviders,
   ...groqProviders,
@@ -68,6 +70,20 @@ export const markProviderUnavailable = (
     providerId,
     Date.now() + cooldownMs,
   );
+};
+
+/**
+ * Temporarily disables every key for a provider family.
+ */
+export const markProviderFamilyUnavailable = (
+  family: ProviderFamily,
+  cooldownMs = DEFAULT_COOLDOWN_MS,
+) => {
+  for (const entry of allProviders) {
+    if (entry.family === family) {
+      markProviderUnavailable(entry.id, cooldownMs);
+    }
+  }
 };
 
 /**
