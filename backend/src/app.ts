@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { errorMiddleware, notFoundMiddleware } from "./middlewares/error.middleware.js";
+import aiRouter from "./routes/ai.route.js";
 import authRouter from "./routes/auth.route.js";
 import healthRouter from "./routes/health.route.js";
 import projectRouter from "./routes/project.route.js";
@@ -17,6 +18,7 @@ app.use(
 app.use(express.json({ limit: "32kb" }));
 
 app.use("/api/v1/health", healthRouter);
+app.use("/api/v1/ai", aiRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/projects", projectRouter);
 
