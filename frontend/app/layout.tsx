@@ -6,16 +6,13 @@ import { Toaster } from "sonner";
 
 
 export const metadata: Metadata = {
-  title: "DevMate Ai",
-  description: "Your coding friend",
+  title: "DevMate AI — Your AI developer workspace",
+  description: "Organize projects, work with your code, and bring AI assistance into the flow.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={` h-full antialiased`}
-    >
+    <html lang="en" className="dark h-full antialiased">
       <body className="min-h-full flex flex-col">
         <Providers>
         {children}

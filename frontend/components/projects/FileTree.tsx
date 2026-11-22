@@ -147,10 +147,10 @@ export default function FileTree({
       <div
         draggable={Boolean(node.id)}
         onDragStart={handleDragStart}
-        className={`group flex cursor-grab items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-zinc-800 active:cursor-grabbing ${
+        className={`group flex cursor-grab items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-white/[0.05] active:cursor-grabbing ${
           selectedFile?.id === node.id
-            ? "bg-zinc-800 text-white font-medium"
-            : "text-zinc-300"
+            ? "bg-violet-400/[0.10] font-medium text-violet-100 ring-1 ring-inset ring-violet-300/10"
+            : "text-slate-400"
         }`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => {
@@ -164,8 +164,8 @@ export default function FileTree({
         }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <File className="h-4 w-4 shrink-0 text-zinc-400 group-hover:text-white" />
-          <span className="truncate group-hover:text-white">
+          <File className="h-4 w-4 shrink-0 text-slate-500 transition-colors group-hover:text-cyan-200" />
+          <span className="truncate group-hover:text-slate-100">
             {node.name}
           </span>
         </div>
@@ -180,7 +180,7 @@ export default function FileTree({
                   onRename(node);
                 }}
                 title="Rename file"
-                className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                className="rounded p-1 text-slate-500 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="Rename file"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -194,7 +194,7 @@ export default function FileTree({
                   onDelete(node);
                 }}
                 title="Delete file"
-                className="rounded p-1 text-zinc-400 hover:bg-red-900/50 hover:text-red-300"
+                className="rounded p-1 text-slate-500 transition-colors hover:bg-red-900/50 hover:text-red-300"
                 aria-label="Delete file"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -214,12 +214,12 @@ export default function FileTree({
         onDragOver={handleFolderDragOver}
         onDragLeave={handleFolderDragLeave}
         onDrop={handleFolderDrop}
-        className={`group flex cursor-grab items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-zinc-800 active:cursor-grabbing ${
+        className={`group flex cursor-grab items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-white/[0.05] active:cursor-grabbing ${
           isDropTarget
-            ? "bg-amber-500/15 text-amber-100 ring-1 ring-inset ring-amber-400/50"
+            ? "bg-cyan-500/10 text-cyan-100 ring-1 ring-inset ring-cyan-300/30"
             : selectedFolderId === node.id
-              ? "bg-zinc-800/60 text-white"
-              : "text-zinc-200"
+              ? "bg-violet-400/[0.06] text-violet-100"
+              : "text-slate-300"
         }`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => {
@@ -231,9 +231,9 @@ export default function FileTree({
       >
         <div className="flex items-center gap-2 min-w-0">
           {isExpanded ? (
-            <FolderOpen className="h-4 w-4 shrink-0 text-amber-400" />
+            <FolderOpen className="h-4 w-4 shrink-0 text-violet-300" />
           ) : (
-            <Folder className="h-4 w-4 shrink-0 text-amber-400" />
+            <Folder className="h-4 w-4 shrink-0 text-indigo-300" />
           )}
 
           <span className="truncate">
@@ -252,7 +252,7 @@ export default function FileTree({
                   onCreateInFolder("file", node.id!);
                 }}
                 title="New File in folder"
-                className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                className="rounded p-1 text-slate-500 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="New file in folder"
               >
                 <FilePlus className="h-3.5 w-3.5" />
@@ -265,7 +265,7 @@ export default function FileTree({
                   onCreateInFolder("folder", node.id!);
                 }}
                 title="New Folder in folder"
-                className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                className="rounded p-1 text-slate-500 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="New folder in folder"
               >
                 <FolderPlus className="h-3.5 w-3.5" />
@@ -283,7 +283,7 @@ export default function FileTree({
                     onRename(node);
                   }}
                   title="Rename folder"
-                  className="rounded p-1 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                  className="rounded p-1 text-slate-500 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label="Rename folder"
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -297,7 +297,7 @@ export default function FileTree({
                     onDelete(node);
                   }}
                   title="Delete folder"
-                  className="rounded p-1 text-zinc-400 hover:bg-red-900/50 hover:text-red-300"
+                  className="rounded p-1 text-slate-500 transition-colors hover:bg-red-900/50 hover:text-red-300"
                   aria-label="Delete folder"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

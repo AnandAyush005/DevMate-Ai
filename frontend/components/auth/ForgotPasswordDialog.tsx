@@ -56,7 +56,7 @@ export default function ForgotPasswordDialog() {
         Reset password
       </DialogTrigger>
 
-      <DialogContent className="border-white/10 bg-[#111113] text-white sm:max-w-md">
+      <DialogContent className="border-[#1b2732] bg-[#080d12] text-white sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white">Reset password</DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -75,13 +75,13 @@ export default function ForgotPasswordDialog() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isPending}
-            className="h-11 border-white/10 bg-[#18181b] text-white placeholder:text-zinc-600 focus-visible:ring-white/20"
+            className="h-11 border-[#1b2732] bg-[#000102] text-white placeholder:text-slate-500 focus-visible:ring-violet-300/30"
           />
         </div>
 
         <Button
           type="button"
-          className="h-11 w-full bg-white font-medium text-black transition-colors hover:bg-zinc-200"
+          className="h-11 w-full bg-primary font-medium text-white transition-colors hover:bg-violet-400"
           disabled={isPending}
           onClick={handleSendResetLink}
         >
