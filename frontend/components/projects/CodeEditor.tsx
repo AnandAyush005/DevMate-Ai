@@ -14,14 +14,12 @@ type WorkspaceFile = {
 type CodeEditorProps = {
   selectedFile: WorkspaceFile | null;
   setSelectedFile: Dispatch<SetStateAction<WorkspaceFile | null>>;
-  files: WorkspaceFile[];
   setFiles: Dispatch<SetStateAction<WorkspaceFile[]>>;
 };
 
 export default function CodeEditor({
   selectedFile,
   setSelectedFile,
-  files,
   setFiles,
 }: CodeEditorProps) {
   if (!selectedFile) {
@@ -33,13 +31,21 @@ export default function CodeEditor({
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full overflow-hidden rounded-lg border border-white/[0.05]">
       <Editor
         height="100%"
         width="100%"
-        theme="hc-black"
+        theme="vs-dark"
         value={selectedFile.content}
         language={getLanguageFromFileName(selectedFile.name)}
+        options={{
+          automaticLayout: true,
+          fontSize: 13,
+          lineHeight: 22,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          padding: { top: 16, bottom: 16 },
+        }}
         onChange={(value) => {
           const content = value ?? "";
 

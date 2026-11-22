@@ -33,7 +33,7 @@ export default function Login() {
     mutate(loginCredentials, {
       onSuccess: () => {
         toast.success("Login successful");
-        router.push("/");
+        router.push("/dashboard");
       },
 
       onError: (error) => {
@@ -50,21 +50,13 @@ export default function Login() {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#09090b] px-4 text-white">
-      {/* Background Glow */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-55 h-125 w-125 -translate-x-1/2 rounded-full bg-violet-600/10 blur-[120px]" />
-
-        <div className="absolute -bottom-62.5 -right-25 h-100 w-100 rounded-full bg-blue-600/5 blur-[120px]" />
-      </div>
-
-      {/* Login Container */}
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-white">
       <div className="relative w-full max-w-md">
-        <div className="rounded-2xl border border-white/10 bg-[#111113] p-8 shadow-2xl shadow-black/40">
+        <div className="rounded-2xl border border-[#1b2732] bg-[#080d12] p-8">
           
           {/* Logo */}
           <div className="mb-8 flex flex-col items-center text-center">
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-white text-black shadow-lg shadow-white/10">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-violet-300/15 bg-violet-400/[0.06] text-violet-200">
               <Code2 className="h-7 w-7" />
             </div>
 
@@ -101,7 +93,7 @@ export default function Login() {
                   }))
                 }
                 disabled={isPending}
-                className="h-11 border-white/10 bg-[#18181b] text-white placeholder:text-zinc-600 focus-visible:ring-white/20"
+                className="h-11 border-[#1b2732] bg-[#000102] text-white placeholder:text-slate-500 focus-visible:ring-violet-300/30"
               />
             </div>
 
@@ -127,7 +119,7 @@ export default function Login() {
                     }))
                   }
                   disabled={isPending}
-                  className="h-11 border-white/10 bg-[#18181b] pr-10 text-white placeholder:text-zinc-600 focus-visible:ring-white/20"
+                  className="h-11 border-[#1b2732] bg-[#000102] pr-10 text-white placeholder:text-slate-500 focus-visible:ring-violet-300/30"
                 />
 
                 <button
@@ -156,7 +148,7 @@ export default function Login() {
             {/* Login Button */}
             <Button
               type="button"
-              className="h-11 w-full bg-white font-medium text-black transition-colors hover:bg-zinc-200 cursor-pointer"
+              className="h-11 w-full bg-primary font-medium text-white transition-colors hover:bg-violet-400 cursor-pointer"
               disabled={isPending}
               onClick={handleLogin}
             >
@@ -173,7 +165,7 @@ export default function Login() {
 
           {/* Register */}
           <div className="mt-6 text-center text-sm text-zinc-500">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/register"
               className="font-medium text-zinc-200 underline-offset-4 transition-colors hover:text-white hover:underline cursor-pointer"

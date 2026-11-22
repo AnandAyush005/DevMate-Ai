@@ -7,7 +7,13 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import { FilePlus, FolderPlus, Sparkles, X } from "lucide-react";
+import {
+  FilePlus,
+  FolderKanban,
+  FolderPlus,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -872,20 +878,25 @@ const handleFileClose = (fileId: string) => {
   if (isLoading) {
     return (
       <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
-        <p>Loading project...</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[#1b2732] bg-[#080d12] px-5 py-4 text-sm text-slate-300">
+          <span className="size-4 animate-spin rounded-full border-2 border-violet-300/25 border-t-violet-300" />
+          Loading project...
+        </div>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
-        <p>
+      <div className="dark flex min-h-screen items-center justify-center bg-background px-5 text-foreground">
+        <div className="max-w-md rounded-2xl border border-[#1b2732] bg-[#080d12] p-8 text-center">
+          <p className="font-medium text-slate-100">
           {axios.isAxiosError(error)
             ? error.response?.data?.error?.message ??
               "Failed to load project"
             : "Failed to load project"}
-        </p>
+          </p>
+        </div>
       </div>
     );
   }
@@ -894,17 +905,30 @@ const handleFileClose = (fileId: string) => {
 
   return (
     <div className="dark flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
-   
-    <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-      <h1 className="font-semibold">
-        {project?.name || "Untitled Project"}
-      </h1>
+    <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-[#1b2732] bg-[#080d12] px-3 sm:px-5">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="hidden size-9 shrink-0 items-center justify-center rounded-xl border border-violet-300/10 bg-violet-400/[0.08] text-violet-200 sm:flex">
+          <FolderKanban className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500 sm:block">Project workspace</p>
+          <h1 className="max-w-[34vw] truncate text-sm font-semibold tracking-tight text-slate-100 sm:text-base">
+            {project?.name || "Untitled Project"}
+          </h1>
+        </div>
+      </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        {selectedFile && (
+          <span className={`hidden items-center gap-1.5 text-[11px] sm:inline-flex ${hasUnsavedChanges ? "text-amber-300" : "text-slate-500"}`}>
+            <span className={`size-1.5 rounded-full ${hasUnsavedChanges ? "bg-amber-300" : "bg-emerald-400"}`} />
+            {isPending ? "Saving..." : hasUnsavedChanges ? "Unsaved changes" : "All changes saved"}
+          </span>
+        )}
         <button
           onClick={handleFileSave}
           disabled={!selectedFile || isPending}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm"
         >
           {isPending ? "Saving..." : "Save"}
         </button>
@@ -913,13 +937,17 @@ const handleFileClose = (fileId: string) => {
           type="button"
           aria-expanded={isAIChatOpen}
           onClick={() => setIsAIChatOpen((open) => !open)}
-          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-zinc-700 px-2 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800 sm:px-3 sm:text-sm"
+          className={`inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 text-xs transition-colors sm:px-3 sm:text-sm ${
+            isAIChatOpen
+              ? "border-violet-300/20 bg-violet-400/10 text-violet-100"
+              : "border-[#1b2732] bg-[#080d12] text-slate-300 hover:bg-[#141d27] hover:text-white"
+          }`}
         >
           <Sparkles aria-hidden="true" className="h-4 w-4" />
           {isAIChatOpen ? "Close AI" : "AI Assistant"}
         </button>
 
-        <button className="rounded-md border px-3 py-1.5 text-sm">
+        <button className="hidden h-9 rounded-lg border border-[#1b2732] bg-[#080d12] px-3 text-sm text-slate-400 transition-colors hover:bg-[#141d27] hover:text-slate-200 sm:block">
           Settings
         </button>
       </div>
@@ -928,17 +956,17 @@ const handleFileClose = (fileId: string) => {
 
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <aside
-          className="flex h-[var(--file-pane-size)] w-full shrink-0 flex-col border-b lg:h-full lg:w-[var(--file-pane-size)] lg:border-b-0 lg:border-r"
+          className="flex h-[var(--file-pane-size)] w-full shrink-0 flex-col border-b border-[#1b2732] bg-[#080d12] transition-[width,height] duration-200 lg:h-full lg:w-[var(--file-pane-size)] lg:border-b-0 lg:border-r"
           style={{ "--file-pane-size": `${filePaneSize}px` } as CSSProperties}
         >
-          <div className="flex h-10 items-center justify-between border-b px-4">
-            <span className="text-sm font-medium">Files</span>
+          <div className="flex h-11 items-center justify-between border-b border-[#1b2732] px-4">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Explorer</span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => handleOpenCreate("file")}
                 title="New File"
-                className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+                className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white/[0.07] hover:text-violet-200"
                 aria-label="Create file"
               >
                 <FilePlus className="h-4 w-4" />
@@ -948,7 +976,7 @@ const handleFileClose = (fileId: string) => {
                 type="button"
                 onClick={() => handleOpenCreate("folder")}
                 title="New Folder"
-                className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+                className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white/[0.07] hover:text-violet-200"
                 aria-label="Create folder"
               >
                 <FolderPlus className="h-4 w-4" />
@@ -962,7 +990,7 @@ const handleFileClose = (fileId: string) => {
                 className={`mb-2 flex items-center justify-between rounded-md border border-dashed px-3 py-2 text-xs transition-colors ${
                   isRootDropTarget
                     ? "border-amber-400 bg-amber-400/10 text-amber-200"
-                    : "border-zinc-800 text-zinc-500"
+                    : "border-[#1b2732] text-slate-500"
                 }`}
                 onDragOver={(event) => {
                   event.preventDefault();
@@ -1027,7 +1055,7 @@ const handleFileClose = (fileId: string) => {
           aria-valuemax={600}
           aria-valuemin={160}
           aria-valuenow={filePaneSize}
-          className="h-2 w-full shrink-0 cursor-row-resize touch-none bg-zinc-900/80 transition-colors hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 lg:hidden"
+          className="h-2 w-full shrink-0 cursor-row-resize touch-none bg-[#080d12] transition-colors hover:bg-[#1b2732] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400 lg:hidden"
           onKeyDown={(event) =>
             resizeByKeyboard(
               event,
@@ -1062,7 +1090,7 @@ const handleFileClose = (fileId: string) => {
           aria-valuemax={600}
           aria-valuemin={160}
           aria-valuenow={filePaneSize}
-          className="hidden h-full w-2 shrink-0 cursor-col-resize touch-none bg-zinc-900/80 transition-colors hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 lg:block"
+          className="hidden h-full w-2 shrink-0 cursor-col-resize touch-none bg-[#080d12] transition-colors hover:bg-[#1b2732] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400 lg:block"
           onKeyDown={(event) =>
             resizeByKeyboard(
               event,
@@ -1094,7 +1122,7 @@ const handleFileClose = (fileId: string) => {
 
         <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="flex h-10 shrink-0 items-center border-b px-4">
+          <div className="flex h-10 shrink-0 items-center overflow-x-auto border-b border-[#1b2732] bg-[#080d12] px-2">
             {openFiles.map((fileId) => {
               const file = files.find(
                 (item) => item.id === fileId
@@ -1105,10 +1133,10 @@ const handleFileClose = (fileId: string) => {
               return (
                 <div
                   key={file.id}
-                  className={`flex cursor-pointer items-center gap-2 border-r p-2 hover:underline ${
+                  className={`flex shrink-0 cursor-pointer items-center gap-2 border-r border-[#1b2732] px-3 py-2 text-xs transition-colors ${
                     selectedFile?.id === file.id
-                      ? "bg-muted text-foreground"
-                      : "text-zinc-400"
+                      ? "bg-violet-400/[0.08] text-slate-100"
+                      : "text-slate-500 hover:bg-white/[0.035] hover:text-slate-300"
                   }`}
                   onClick={() => handleFileSelect(file)}
                 >
@@ -1118,7 +1146,7 @@ const handleFileClose = (fileId: string) => {
                   {savedContents[file.id] !== undefined &&
                     file.content !== savedContents[file.id] && (
                       <span
-                        className="size-2 rounded-full bg-orange-400"
+                        className="size-2 rounded-full bg-amber-300"
                         title="Unsaved changes"
                         aria-label="Unsaved changes"
                       />
@@ -1127,7 +1155,7 @@ const handleFileClose = (fileId: string) => {
 
 
                   <X
-                    className="size-4 hover:opacity-50"
+                    className="size-4 rounded text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleFileClose(file.id);
@@ -1138,7 +1166,7 @@ const handleFileClose = (fileId: string) => {
             })}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-hidden p-4">
+          <div className="min-h-0 flex-1 overflow-hidden bg-background p-2 sm:p-3">
             {selectedFile &&
             !loadedFileIds.includes(selectedFile.id) &&
             isFileContentLoading ? (
@@ -1155,7 +1183,6 @@ const handleFileClose = (fileId: string) => {
               <CodeEditor
                 selectedFile={selectedFile}
                 setSelectedFile={setSelectedFile}
-                files={files}
                 setFiles={setFiles}
               />
             ) : (
@@ -1173,7 +1200,7 @@ const handleFileClose = (fileId: string) => {
           } as CSSProperties}
           className={
             isAIChatOpen
-              ? "absolute inset-x-0 bottom-0 z-20 h-[var(--ai-pane-height)] max-h-full bg-background p-3 lg:relative lg:inset-auto lg:z-auto lg:h-full lg:w-[var(--ai-pane-width)] lg:shrink-0 lg:border-l lg:border-zinc-800 lg:bg-transparent"
+              ? "absolute inset-x-0 bottom-0 z-20 h-[var(--ai-pane-height)] max-h-full animate-rise-in border-t border-[#1b2732] bg-[#080d12] p-3 lg:relative lg:inset-auto lg:z-auto lg:h-full lg:w-[var(--ai-pane-width)] lg:shrink-0 lg:border-l lg:border-t-0 lg:border-[#1b2732]"
               : "hidden"
           }
         >
@@ -1269,7 +1296,7 @@ const handleFileClose = (fileId: string) => {
       if (!open) setPendingCloseFileId(null);
     }}
   >
-  <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+  <DialogContent className="border border-[#1b2732] bg-[#080d12] text-slate-100 sm:max-w-md">
     <DialogHeader className="space-y-3">
       <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
         Discard unsaved changes?
@@ -1291,7 +1318,7 @@ const handleFileClose = (fileId: string) => {
 
           setPendingCloseFileId(null);
         }}
-        className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-5 text-sm font-medium text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b] active:scale-[0.98]"
+        className="inline-flex h-10 items-center justify-center rounded-lg border border-[#1b2732] bg-[#101820] px-5 text-sm font-medium text-slate-300 transition-colors hover:bg-[#141d27] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080d12] active:scale-[0.98]"
       >
         Cancel
       </button>
@@ -1305,7 +1332,7 @@ const handleFileClose = (fileId: string) => {
 
         setPendingCloseFileId(null);
       }}
-      className="inline-flex h-10 items-center justify-center rounded-lg border border-red-500/30 bg-red-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+      className="inline-flex h-10 items-center justify-center rounded-lg border border-rose-400/20 bg-rose-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-rose-400"
     >
       Discard changes
     </button>
@@ -1320,7 +1347,7 @@ const handleFileClose = (fileId: string) => {
         if (!open) setCreateDialog((prev) => ({ ...prev, isOpen: false }));
       }}
     >
-      <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+      <DialogContent className="border border-[#1b2732] bg-[#080d12] text-slate-100 sm:max-w-md">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
             Create New {createDialog.type === "file" ? "File" : "Folder"}
@@ -1346,7 +1373,7 @@ const handleFileClose = (fileId: string) => {
                   : "e.g. components, utils"
               }
               autoFocus
-              className="border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-zinc-500"
+              className="border-[#1b2732] bg-[#000102] text-slate-100 placeholder:text-slate-500 focus-visible:border-violet-300/40"
             />
           </div>
 
@@ -1362,7 +1389,7 @@ const handleFileClose = (fileId: string) => {
                   targetFolderId: e.target.value || undefined,
                 }))
               }
-              className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+              className="h-9 w-full rounded-lg border border-[#1b2732] bg-[#000102] px-3 text-sm text-slate-100 outline-none focus:border-violet-300/40"
             >
               <option value="">Root (/)</option>
               {projectFolders
@@ -1381,7 +1408,7 @@ const handleFileClose = (fileId: string) => {
               onClick={() =>
                 setCreateDialog((prev) => ({ ...prev, isOpen: false }))
               }
-              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-[#1b2732] bg-[#101820] px-4 text-sm font-medium text-slate-300 transition-colors hover:bg-[#141d27] hover:text-white"
             >
               Cancel
             </button>
@@ -1390,7 +1417,7 @@ const handleFileClose = (fileId: string) => {
               disabled={
                 createFileMutation.isPending || createFolderMutation.isPending
               }
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {createFileMutation.isPending || createFolderMutation.isPending
                 ? "Creating..."
@@ -1407,7 +1434,7 @@ const handleFileClose = (fileId: string) => {
         if (!open) setRenameDialog((prev) => ({ ...prev, isOpen: false }));
       }}
     >
-      <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+      <DialogContent className="border border-[#1b2732] bg-[#080d12] text-slate-100 sm:max-w-md">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
             Rename {renameDialog.type === "file" ? "File" : "Folder"}
@@ -1428,7 +1455,7 @@ const handleFileClose = (fileId: string) => {
                 setRenameDialog((prev) => ({ ...prev, name: e.target.value }))
               }
               autoFocus
-              className="border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-zinc-500"
+              className="border-[#1b2732] bg-[#000102] text-slate-100 placeholder:text-slate-500 focus-visible:border-violet-300/40"
             />
           </div>
 
@@ -1438,7 +1465,7 @@ const handleFileClose = (fileId: string) => {
               onClick={() =>
                 setRenameDialog((prev) => ({ ...prev, isOpen: false }))
               }
-              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-[#1b2732] bg-[#101820] px-4 text-sm font-medium text-slate-300 transition-colors hover:bg-[#141d27] hover:text-white"
             >
               Cancel
             </button>
@@ -1447,7 +1474,7 @@ const handleFileClose = (fileId: string) => {
               disabled={
                 renameFileMutation.isPending || renameFolderMutation.isPending
               }
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {renameFileMutation.isPending || renameFolderMutation.isPending
                 ? "Renaming..."
@@ -1464,7 +1491,7 @@ const handleFileClose = (fileId: string) => {
         if (!open) setItemActionDialog(null);
       }}
     >
-      <DialogContent className="border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-2xl sm:max-w-md">
+      <DialogContent className="border border-[#1b2732] bg-[#080d12] text-slate-100 sm:max-w-md">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-100">
             Delete {itemActionDialog?.type}
@@ -1481,7 +1508,7 @@ const handleFileClose = (fileId: string) => {
             <button
               type="button"
               onClick={() => setItemActionDialog(null)}
-              className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-[#1b2732] bg-[#101820] px-4 text-sm font-medium text-slate-300 transition-colors hover:bg-[#141d27] hover:text-white"
             >
               Cancel
             </button>

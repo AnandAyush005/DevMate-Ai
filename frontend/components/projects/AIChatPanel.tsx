@@ -62,7 +62,7 @@ const renderInlineMarkdown = (text: string): ReactNode[] => {
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
         <code
-          className="rounded bg-zinc-950 px-1.5 py-0.5 font-mono text-[0.9em] text-amber-200"
+          className="rounded bg-[#141d27] px-1.5 py-0.5 font-mono text-[0.9em] text-cyan-200"
           key={index}
         >
           {part.slice(1, -1)}
@@ -120,13 +120,13 @@ function MarkdownResponse({ content }: { content: string }) {
 
       blocks.push(
         <div
-          className="my-4 overflow-hidden rounded-xl border border-zinc-700 bg-[#070709]"
+          className="my-4 overflow-hidden rounded-xl border border-[#1b2732] bg-[#000102]"
           key={`code-${index}`}
         >
-          <div className="border-b border-zinc-800 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+          <div className="border-b border-[#1b2732] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
             {codeFence[1] || "code"}
           </div>
-          <pre className="overflow-x-auto p-4 text-xs leading-6 text-zinc-200 sm:text-sm">
+          <pre className="overflow-x-auto p-4 text-xs leading-6 text-slate-200 sm:text-sm">
             <code className="font-mono">{codeLines.join("\n")}</code>
           </pre>
         </div>,
@@ -166,15 +166,15 @@ function MarkdownResponse({ content }: { content: string }) {
 
       blocks.push(
         <div
-          className="my-4 max-w-full overflow-x-auto rounded-xl border border-zinc-700"
+          className="my-4 max-w-full overflow-x-auto rounded-xl border border-[#1b2732]"
           key={`table-${index}`}
         >
           <table className="w-full border-collapse text-left text-xs sm:text-sm">
-            <thead className="bg-zinc-950/90 text-zinc-100">
+            <thead className="bg-[#080d12] text-slate-100">
               <tr>
                 {headers.map((header, cellIndex) => (
                   <th
-                    className="whitespace-nowrap border-b border-zinc-700 px-3 py-2.5 font-semibold"
+                    className="whitespace-nowrap border-b border-[#1b2732] px-3 py-2.5 font-semibold"
                     key={cellIndex}
                   >
                     {renderInlineMarkdown(header)}
@@ -186,13 +186,13 @@ function MarkdownResponse({ content }: { content: string }) {
               {rows.map((row, rowIndex) => (
                 <tr
                   className={
-                    rowIndex % 2 === 0 ? "bg-zinc-900/60" : "bg-zinc-900/20"
+                    rowIndex % 2 === 0 ? "bg-[#101820]" : "bg-[#080d12]"
                   }
                   key={rowIndex}
                 >
                   {headers.map((_, cellIndex) => (
                     <td
-                      className="min-w-24 border-b border-zinc-800 px-3 py-2.5 align-top text-zinc-300 last:border-b-0"
+                      className="min-w-24 border-b border-[#1b2732] px-3 py-2.5 align-top text-slate-300 last:border-b-0"
                       key={cellIndex}
                     >
                       {renderInlineMarkdown(row[cellIndex] ?? "")}
@@ -217,8 +217,8 @@ function MarkdownResponse({ content }: { content: string }) {
       const List = ordered ? "ol" : "ul";
       blocks.push(
         <List
-          className={`my-3 space-y-1.5 pl-5 text-zinc-300 ${
-            ordered ? "list-decimal" : "list-disc marker:text-amber-400"
+          className={`my-3 space-y-1.5 pl-5 text-slate-300 ${
+            ordered ? "list-decimal" : "list-disc marker:text-teal-300"
           }`}
           key={`list-${index}`}
         >
@@ -240,7 +240,7 @@ function MarkdownResponse({ content }: { content: string }) {
       }
       blocks.push(
         <blockquote
-          className="my-3 border-l-2 border-amber-400/70 pl-4 text-zinc-400"
+          className="my-3 border-l-2 border-teal-300/50 pl-4 text-slate-400"
           key={`quote-${index}`}
         >
           {renderInlineMarkdown(quote.join(" "))}
@@ -250,7 +250,7 @@ function MarkdownResponse({ content }: { content: string }) {
     }
 
     if (/^\s*(?:[-*_]\s*){3,}$/.test(line)) {
-      blocks.push(<hr className="my-4 border-zinc-700" key={`rule-${index}`} />);
+      blocks.push(<hr className="my-4 border-[#1b2732]" key={`rule-${index}`} />);
       index += 1;
       continue;
     }
@@ -265,7 +265,7 @@ function MarkdownResponse({ content }: { content: string }) {
       index += 1;
     }
     blocks.push(
-      <p className="my-2 leading-7 text-zinc-300" key={`paragraph-${index}`}>
+      <p className="my-2 leading-7 text-slate-300" key={`paragraph-${index}`}>
         {renderInlineMarkdown(paragraph.join(" "))}
       </p>,
     );
@@ -424,14 +424,14 @@ export default function AIChatPanel({
   };
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-800 bg-[#09090b] text-zinc-100 shadow-xl">
-      <header className="flex shrink-0 items-center gap-3 border-b border-zinc-800 px-4 py-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-amber-300">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-[#1b2732] bg-[#080d12] text-slate-100">
+      <header className="flex shrink-0 items-center gap-3 border-b border-[#1b2732] px-4 py-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-violet-300/15 bg-violet-400/[0.06] text-violet-200">
           <Sparkles aria-hidden="true" className="h-4 w-4" />
         </div>
         <div>
           <h2 className="text-sm font-semibold text-white">DevMate AI</h2>
-          <p className="text-xs text-zinc-500">Ask anything about your work</p>
+          <p className="text-xs text-slate-500">Ask anything about your work</p>
         </div>
       </header>
 
@@ -442,7 +442,7 @@ export default function AIChatPanel({
       >
         {messages.length === 0 && (
           <div className="flex flex-1 items-center justify-center text-center">
-            <p className="max-w-xs text-sm text-zinc-500">
+            <p className="max-w-xs text-sm text-slate-500">
               Send a message to start a conversation.
             </p>
           </div>
@@ -457,15 +457,15 @@ export default function AIChatPanel({
               className={`flex ${isUser ? "justify-end" : "justify-start"}`}
             >
               {isUser ? (
-                <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-zinc-100 px-4 py-2.5 text-sm leading-relaxed text-zinc-900">
+                <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md border border-[#1b2732] bg-[#141d27] px-4 py-2.5 text-sm leading-relaxed text-slate-100">
                   {message.text}
                 </p>
               ) : (
                 <div className="flex w-full max-w-[95%] min-w-0 items-start gap-2.5">
-                  <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-amber-300/20 bg-amber-400/10 text-amber-300">
+                  <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-violet-300/15 bg-violet-400/[0.06] text-violet-200">
                     <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
                   </div>
-                  <div className="min-w-0 flex-1 rounded-xl rounded-tl-sm border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 px-4 py-3 shadow-lg shadow-black/10">
+                  <div className="min-w-0 flex-1 rounded-xl rounded-tl-sm border border-[#1b2732] bg-[#101820] px-4 py-3">
                     <MarkdownResponse content={message.text} />
                   </div>
                 </div>
@@ -478,7 +478,7 @@ export default function AIChatPanel({
           <div className="flex justify-start">
             <div
               aria-label="DevMate AI is responding"
-              className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400"
+              className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-[#1b2732] bg-[#101820] px-4 py-3 text-sm text-slate-400"
               role="status"
             >
               <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
@@ -500,16 +500,16 @@ export default function AIChatPanel({
       </div>
 
       <form
-        className="shrink-0 border-t border-zinc-800 p-3"
+        className="shrink-0 border-t border-[#1b2732] p-3"
         onSubmit={(event) => {
           event.preventDefault();
           void sendMessage();
         }}
       >
-        <div className="flex items-end gap-2 rounded-xl border border-zinc-700 bg-zinc-900 p-2 transition-colors focus-within:border-zinc-500">
+        <div className="flex items-end gap-2 rounded-xl border border-[#1b2732] bg-[#000102] p-2 transition-colors focus-within:border-violet-300/50">
           <textarea
             aria-label="Message DevMate AI"
-            className="max-h-40 min-h-10 flex-1 resize-y bg-transparent px-2 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+            className="max-h-40 min-h-10 flex-1 resize-y bg-transparent px-2 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500"
             onChange={(event) => setPrompt(event.target.value)}
             onKeyDown={handlePromptKeyDown}
             placeholder="Write a message..."
@@ -518,7 +518,7 @@ export default function AIChatPanel({
           />
           <button
             aria-label="Send message"
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-zinc-100 px-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-white transition-colors hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={isLoading || !prompt.trim()}
             type="submit"
           >
@@ -526,7 +526,7 @@ export default function AIChatPanel({
             <span className="sr-only">Send</span>
           </button>
         </div>
-        <p className="mt-2 text-center text-xs text-zinc-600">
+        <p className="mt-2 text-center text-xs text-slate-600">
           Enter to send · Shift+Enter for a new line
         </p>
       </form>
