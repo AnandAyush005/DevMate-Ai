@@ -5,6 +5,13 @@ if (!jwtSecret || Buffer.byteLength(jwtSecret, "utf8") < 32) {
   throw new Error("JWT_SECRET must contain at least 32 bytes.");
 }
 
+const onlineCompilerApiKey =
+  process.env["ONLINECOMPILER_API_KEY"];
+
+if (!onlineCompilerApiKey) {
+  throw new Error("ONLINECOMPILER_API_KEY must be configured.");
+}
+
 const frontendUrl = process.env["FRONTEND_URL"];
 
 if (!frontendUrl) {
@@ -64,6 +71,10 @@ export const env = {
     secure: cookieSecure,
     httpOnly: true,
     path: "/",
+  },
+
+  onlineCompiler: {
+    apiKey: onlineCompilerApiKey,
   },
 
   smtp: {

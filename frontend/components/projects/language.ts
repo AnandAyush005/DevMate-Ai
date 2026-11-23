@@ -19,6 +19,20 @@ export function getLanguageFromFileName(fileName: string): string {
         return 'json';
     case 'md':
         return 'markdown';
+    case "py":
+      return "python";
+    case "c":
+      return "c";
+    case "cpp":
+      return "cpp";
+    case "java":
+      return "java";
+    case "go":
+      return "go";
+    case "rs":
+      return "rust";
+    case "php":
+      return "php";
     default:
       return 'plaintext';
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Editor } from "@monaco-editor/react";
+import type { OnMount } from "@monaco-editor/react";
 import type { Dispatch, SetStateAction } from "react";
 import { getLanguageFromFileName } from "./language";
 
@@ -15,14 +16,33 @@ type CodeEditorProps = {
   selectedFile: WorkspaceFile | null;
   setSelectedFile: Dispatch<SetStateAction<WorkspaceFile | null>>;
   setFiles: Dispatch<SetStateAction<WorkspaceFile[]>>;
+  onSelectionChange: (selection: string) => void;
 };
 
 export default function CodeEditor({
   selectedFile,
   setSelectedFile,
   setFiles,
+  onSelectionChange,
 }: CodeEditorProps) {
+  
+   const handleEditorMount: OnMount = (editorInstance) => {
+      editorInstance.onDidChangeCursorSelection(() => {
+        const selection = editorInstance.getSelection();
+
+        if (!selection || selection.isEmpty()) {
+          onSelectionChange("");
+          return;
+        }
+
+        const selectedText = editorInstance.getModel()?.getValueInRange(selection) ?? "";
+
+        onSelectionChange(selectedText);
+      });
+    };
+
   if (!selectedFile) {
+
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
         Select a file to start editing
@@ -37,6 +57,7 @@ export default function CodeEditor({
         width="100%"
         theme="vs-dark"
         value={selectedFile.content}
+        onMount={handleEditorMount}
         language={getLanguageFromFileName(selectedFile.name)}
         options={{
           automaticLayout: true,
