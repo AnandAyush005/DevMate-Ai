@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  File,
   Folder,
   FolderOpen,
   FilePlus,
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { DragEvent as ReactDragEvent } from "react";
+import FileTypeIcon from "./FileTypeIcon";
 
 export const DRAG_ITEM_DATA_TYPE = "application/x-devmate-project-item";
 
@@ -164,7 +164,7 @@ export default function FileTree({
         }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <File className="h-4 w-4 shrink-0 text-slate-500 transition-colors group-hover:text-cyan-200" />
+          <FileTypeIcon fileName={node.name} />
           <span className="truncate group-hover:text-slate-100">
             {node.name}
           </span>

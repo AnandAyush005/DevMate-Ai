@@ -1184,6 +1184,7 @@ const handleFileClose = (fileId: string) => {
                 selectedFile={selectedFile}
                 setSelectedFile={setSelectedFile}
                 setFiles={setFiles}
+                onSelectionChange={() => {}}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-zinc-500">
