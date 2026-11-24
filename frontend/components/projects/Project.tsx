@@ -129,13 +129,6 @@ export default function ProjectWorkspace({
   const rootFolderId = projectFolders.find(
     (folder: { id: string; path: string }) => folder.path === "/",
   )?.id;
-  const aiProjectFiles: AIProjectFile[] = (projectFiles ?? []).map(
-    (file: AIProjectFile) => ({
-      id: file.id,
-      name: file.name,
-      path: file.path,
-    }),
-  );
 
   const createFileMutation = useCreateProjectFile(projectId);
   const createFolderMutation = useCreateProjectFolder(projectId);
@@ -195,6 +188,23 @@ export default function ProjectWorkspace({
   const [loadedFileIds, setLoadedFileIds] = useState<string[]>([]);
   const [pendingCloseFileId, setPendingCloseFileId] =
   useState<string | null>(null);
+
+  const aiProjectFiles: AIProjectFile[] = (projectFiles ?? []).map(
+    (file: AIProjectFile) => {
+      const workspaceFile = files.find(
+        (currentFile) => currentFile.id === file.id,
+      );
+      return {
+        id: file.id,
+        name: file.name,
+        path: file.path,
+        content:
+          workspaceFile && loadedFileIds.includes(file.id)
+            ? workspaceFile.content
+            : file.content,
+      };
+    },
+  );
 
   const startResize = (
     event: ReactPointerEvent<HTMLDivElement>,
@@ -1518,7 +1528,6 @@ const handleFileClose = (fileId: string) => {
             tabIndex={0}
           />
           <AIChatPanel
-            projectId={projectId}
             files={aiProjectFiles}
             activeFile={
               selectedFile && loadedFileIds.includes(selectedFile.id)
