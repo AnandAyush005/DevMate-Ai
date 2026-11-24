@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { LoaderCircle, Send, Sparkles } from "lucide-react";
+import { Code2, LoaderCircle, Send, Sparkles } from "lucide-react";
 import { generateAIResponse, type AIRequestPayload } from "@/lib/ai.api";
 
 type ChatMessage = {
@@ -521,20 +521,51 @@ export const findRelevantFiles = (
   return activeFile && isSuitableSourceFile(activeFile) ? [activeFile] : [];
 };
 
+export const buildCodeGenerationRequest = (
+  requirement: string,
+  activeFile: ActiveProjectFile | null,
+) => {
+  const activeFileContext =
+    activeFile && isSuitableSourceFile(activeFile)
+      ? `Currently open active file: ${activeFile.path}\n`
+      : "No active file is currently open.\n";
+
+  return (
+    `Generate code for the following requirement:\n${requirement.trim()}\n\n` +
+    activeFileContext +
+    "Instructions:\n" +
+    "- Understand the requested functionality and examine the relevant project files and project path index.\n" +
+    "- Follow the project's existing naming conventions, coding style, and architecture.\n" +
+    "- Reuse existing utilities, types, helpers, and dependencies already present in the project.\n" +
+    "- Generate TypeScript code consistent with the project and avoid introducing unnecessary dependencies.\n" +
+    "- Identify the suggested destination file path and briefly explain why that file is appropriate.\n" +
+    "- Provide the complete generated code in a fenced code block.\n" +
+    "- Mention any additional files or updates that may eventually be required.\n" +
+    "- Do not claim to have created or modified any files.\n" +
+    "- If important information is missing or ambiguous, ask a concise clarification question instead of inventing project conventions."
+  );
+};
+
 export const buildAIRequestPrompt = ({
   request,
   files,
   activeFile,
   messages,
   prioritizeActiveFile = false,
+  retrievalQuery,
 }: {
   request: string;
   files: AIProjectFile[];
   activeFile: ActiveProjectFile | null;
   messages: ChatMessage[];
   prioritizeActiveFile?: boolean;
+  retrievalQuery?: string;
 }): AIRequestPayload => {
-  let relevantFiles = findRelevantFiles(request, files, activeFile);
+  let relevantFiles = findRelevantFiles(
+    retrievalQuery ?? request,
+    files,
+    activeFile,
+  );
   if (
     prioritizeActiveFile &&
     activeFile &&
@@ -634,6 +665,8 @@ export default function AIChatPanel({
     text: string,
     requestActiveFile: ActiveProjectFile | null = activeFile,
     prioritizeActiveFile = false,
+    displayText?: string,
+    retrievalQuery?: string,
   ) => {
     if (!text.trim() || requestInFlightRef.current) return;
     requestInFlightRef.current = true;
@@ -641,7 +674,7 @@ export default function AIChatPanel({
     setIsLoading(true);
     setMessages((current) => [
       ...current,
-      { id: messageId.current++, role: "user", text },
+      { id: messageId.current++, role: "user", text: displayText ?? text },
     ]);
 
     try {
@@ -651,6 +684,7 @@ export default function AIChatPanel({
         activeFile: requestActiveFile,
         messages,
         prioritizeActiveFile,
+        retrievalQuery,
       });
       const response = await generateAIResponse(request);
       setMessages((current) => [
@@ -710,6 +744,31 @@ export default function AIChatPanel({
       "dependencies and interactions with other project components, and important edge cases where relevant.";
 
     void submitRequest(request, requestActiveFile, true);
+  };
+
+  const hasProjectContext =
+    files.some(isSuitableSourceFile) ||
+    Boolean(activeFile && isSuitableSourceFile(activeFile));
+  const canGenerateCode = Boolean(prompt.trim() && hasProjectContext);
+
+  const generateCode = () => {
+    const requirement = prompt.trim();
+    if (!requirement || !hasProjectContext || requestInFlightRef.current) {
+      return;
+    }
+
+    const requestActiveFile =
+      activeFile && isSuitableSourceFile(activeFile) ? activeFile : null;
+    const request = buildCodeGenerationRequest(requirement, requestActiveFile);
+
+    setPrompt("");
+    void submitRequest(
+      request,
+      requestActiveFile,
+      Boolean(requestActiveFile),
+      requirement,
+      requirement,
+    );
   };
 
   const handlePromptKeyDown = (
@@ -809,20 +868,33 @@ export default function AIChatPanel({
         }}
       >
         <div className="mb-2 flex items-center justify-between gap-2">
-          <button
-            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-violet-300/20 bg-violet-400/[0.08] px-3 text-sm font-medium text-violet-100 transition-colors hover:bg-violet-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={isLoading || !canExplainCode}
-            onClick={explainCode}
-            type="button"
-          >
-            <Sparkles aria-hidden="true" className="h-4 w-4" />
-            Explain Code
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-violet-300/20 bg-violet-400/[0.08] px-3 text-sm font-medium text-violet-100 transition-colors hover:bg-violet-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isLoading || !canExplainCode}
+              onClick={explainCode}
+              type="button"
+            >
+              <Sparkles aria-hidden="true" className="h-4 w-4" />
+              Explain Code
+            </button>
+            <button
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-teal-300/20 bg-teal-400/[0.08] px-3 text-sm font-medium text-teal-100 transition-colors hover:bg-teal-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isLoading || !canGenerateCode}
+              onClick={generateCode}
+              type="button"
+            >
+              <Code2 aria-hidden="true" className="h-4 w-4" />
+              Generate Code
+            </button>
+          </div>
           <p
             aria-live="polite"
             className="text-right text-xs text-slate-600"
           >
-            {explainCodeFeedback}
+            {hasProjectContext
+              ? explainCodeFeedback
+              : "Project files are required to generate code."}
           </p>
         </div>
         <div className="flex items-end gap-2 rounded-xl border border-[#1b2732] bg-[#000102] p-2 transition-colors focus-within:border-violet-300/50">
