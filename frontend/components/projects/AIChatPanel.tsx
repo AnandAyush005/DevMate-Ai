@@ -25,6 +25,7 @@ type ActiveProjectFile = AIProjectFile & {
 type AIChatPanelProps = {
   files: AIProjectFile[];
   activeFile: ActiveProjectFile | null;
+  selectedCode: string;
 };
 
 const FRIENDLY_ERROR =
@@ -37,7 +38,7 @@ const MAX_INDEXED_FILE_LENGTH = 100_000;
 const sourceFileExtensions =
   /\.(?:c|cc|cpp|cs|css|dart|go|graphql|gql|h|hpp|html|java|js|jsx|json|kt|md|mjs|cjs|php|prisma|py|rb|rs|sh|sql|swift|ts|tsx|vue|svelte|xml|yaml|yml|toml|ini|properties)$/i;
 const sensitivePath =
-  /(^|\/)(?:\.env(?:\.[^/]*)?|secrets?(?:\.[^/]*)?|credentials?(?:\.[^/]*)?|id_rsa|id_ed25519)(\/|$)/i;
+  /(?:^|\/)(?:\.env(?:\.[^/]*)?|\.envrc|[^/]*\.(?:env|pem|key|p12|pfx|p7b|p7c|p8|der|jks|jceks|keystore|pkcs12|crt|cer)|[^/]*(?:secret|credential|service[-_]?account|account[-_]?key|private[-_]?key|kubeconfig)[^/]*|\.npmrc|\.pypirc|\.dockerconfigjson|\.netrc|\.git-credentials|id_rsa|id_ed25519|id_ecdsa|id_dsa|known_hosts)(?:\/|$)/i;
 
 const conceptKeywords: { name: string; terms: readonly string[] }[] = [
   {
@@ -407,6 +408,10 @@ function MarkdownResponse({ content }: { content: string }) {
 const normalizePath = (path: string) =>
   path.replace(/\\/g, "/").replace(/^\/+/, "").toLowerCase();
 
+const isSensitiveProjectFile = (file: AIProjectFile) =>
+  sensitivePath.test(normalizePath(file.path)) ||
+  sensitivePath.test(normalizePath(file.name));
+
 const getSearchWords = (value: string) =>
   value
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -418,7 +423,7 @@ const isSuitableSourceFile = (file: AIProjectFile) => {
   const path = normalizePath(file.path);
   const name = normalizePath(file.name);
 
-  if (sensitivePath.test(path) || sensitivePath.test(name)) return false;
+  if (isSensitiveProjectFile(file)) return false;
   return sourceFileExtensions.test(name) || /(^|\/)(?:dockerfile|makefile)$/i.test(path);
 };
 
@@ -521,13 +526,26 @@ export const buildAIRequestPrompt = ({
   files,
   activeFile,
   messages,
+  prioritizeActiveFile = false,
 }: {
   request: string;
   files: AIProjectFile[];
   activeFile: ActiveProjectFile | null;
   messages: ChatMessage[];
+  prioritizeActiveFile?: boolean;
 }): AIRequestPayload => {
-  const relevantFiles = findRelevantFiles(request, files, activeFile);
+  let relevantFiles = findRelevantFiles(request, files, activeFile);
+  if (
+    prioritizeActiveFile &&
+    activeFile &&
+    !isSensitiveProjectFile(activeFile)
+  ) {
+    relevantFiles = [
+      activeFile,
+      ...relevantFiles.filter((file) => file.id !== activeFile.id),
+    ].slice(0, MAX_CONTEXT_FILES);
+  }
+
   const filePaths = files
     .filter(isSuitableSourceFile)
     .map((file) => file.path)
@@ -598,6 +616,7 @@ export const buildAIRequestPrompt = ({
 export default function AIChatPanel({
   files,
   activeFile,
+  selectedCode,
 }: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -605,16 +624,19 @@ export default function AIChatPanel({
   const [error, setError] = useState<string | null>(null);
   const messageId = useRef(0);
   const latestMessageRef = useRef<HTMLDivElement>(null);
+  const requestInFlightRef = useRef(false);
 
   useEffect(() => {
     latestMessageRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading, error]);
 
-  const sendMessage = async () => {
-    const text = prompt.trim();
-    if (!text || isLoading) return;
-
-    setPrompt("");
+  const submitRequest = async (
+    text: string,
+    requestActiveFile: ActiveProjectFile | null = activeFile,
+    prioritizeActiveFile = false,
+  ) => {
+    if (!text.trim() || requestInFlightRef.current) return;
+    requestInFlightRef.current = true;
     setError(null);
     setIsLoading(true);
     setMessages((current) => [
@@ -626,8 +648,9 @@ export default function AIChatPanel({
       const request = buildAIRequestPrompt({
         request: text,
         files,
-        activeFile,
+        activeFile: requestActiveFile,
         messages,
+        prioritizeActiveFile,
       });
       const response = await generateAIResponse(request);
       setMessages((current) => [
@@ -641,8 +664,52 @@ export default function AIChatPanel({
     } catch {
       setError(FRIENDLY_ERROR);
     } finally {
+      requestInFlightRef.current = false;
       setIsLoading(false);
     }
+  };
+
+  const sendMessage = () => {
+    const text = prompt.trim();
+    if (!text || requestInFlightRef.current) return;
+
+    setPrompt("");
+    void submitRequest(text);
+  };
+
+  const hasSelectedCode = selectedCode.trim().length > 0;
+  const explanationCode = hasSelectedCode
+    ? selectedCode
+    : activeFile?.content ?? "";
+  const canExplainCode = Boolean(
+    activeFile &&
+      !isSensitiveProjectFile(activeFile) &&
+      explanationCode.trim() &&
+      !explanationCode.includes("\0"),
+  );
+  const explainCodeFeedback = !activeFile
+    ? "Select a file to explain its code."
+    : isSensitiveProjectFile(activeFile)
+      ? "Sensitive files cannot be sent for explanation."
+      : canExplainCode
+        ? hasSelectedCode
+          ? "Explains the selected code."
+          : "Explains the full active file."
+        : "No code is available in this file.";
+
+  const explainCode = () => {
+    if (!activeFile || !canExplainCode || requestInFlightRef.current) return;
+
+    const requestActiveFile = {
+      ...activeFile,
+      content: explanationCode,
+    };
+    const request =
+      `Explain the ${hasSelectedCode ? "selected code" : "complete active file"}. ` +
+      "Cover its purpose, execution flow, important functions and variables, " +
+      "dependencies and interactions with other project components, and important edge cases where relevant.";
+
+    void submitRequest(request, requestActiveFile, true);
   };
 
   const handlePromptKeyDown = (
@@ -741,6 +808,23 @@ export default function AIChatPanel({
           void sendMessage();
         }}
       >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <button
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-violet-300/20 bg-violet-400/[0.08] px-3 text-sm font-medium text-violet-100 transition-colors hover:bg-violet-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={isLoading || !canExplainCode}
+            onClick={explainCode}
+            type="button"
+          >
+            <Sparkles aria-hidden="true" className="h-4 w-4" />
+            Explain Code
+          </button>
+          <p
+            aria-live="polite"
+            className="text-right text-xs text-slate-600"
+          >
+            {explainCodeFeedback}
+          </p>
+        </div>
         <div className="flex items-end gap-2 rounded-xl border border-[#1b2732] bg-[#000102] p-2 transition-colors focus-within:border-violet-300/50">
           <textarea
             aria-label="Message DevMate AI"

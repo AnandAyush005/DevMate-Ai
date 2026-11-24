@@ -179,6 +179,7 @@ export default function ProjectWorkspace({
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [selectedFile, setSelectedFile] =
     useState<WorkspaceFile | null>(null);
+  const [selectedCode, setSelectedCode] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] =
     useState<ExecuteCodeResponse["data"] | null>(null);
@@ -327,6 +328,7 @@ export default function ProjectWorkspace({
     if (projectFiles.length === 0) {
       setFiles([]);
       setSelectedFile(null);
+      setSelectedCode("");
       setOpenFiles([]);
       setLoadedFileIds([]);
       return;
@@ -402,6 +404,9 @@ export default function ProjectWorkspace({
 
     if (!existingFile) return;
 
+    if (selectedFile?.id !== existingFile.id) {
+      setSelectedCode("");
+    }
     setSelectedFile(existingFile);
 
     setOpenFiles((current) =>
@@ -493,6 +498,7 @@ const closeFileTab = (fileId: string) => {
       (file) => file.id === nextFileId
     );
 
+    setSelectedCode("");
     setSelectedFile(nextFile ?? null);
   }
 
@@ -660,6 +666,9 @@ const handleFileClose = (fileId: string) => {
         }
         return next;
       });
+      if (selectedFile && removedIds.has(selectedFile.id)) {
+        setSelectedCode("");
+      }
       setSelectedFile((current) =>
         current && removedIds.has(current.id) ? null : current,
       );
@@ -758,6 +767,7 @@ const handleFileClose = (fileId: string) => {
                 const exists = prev.some((f) => f.id === newFile.id);
                 return exists ? prev : [...prev, workspaceFile];
               });
+              setSelectedCode("");
               setSelectedFile(workspaceFile);
               setOpenFiles((prev) =>
                 prev.includes(newFile.id) ? prev : [...prev, newFile.id]
@@ -1284,7 +1294,7 @@ const handleFileClose = (fileId: string) => {
                 selectedFile={selectedFile}
                 setSelectedFile={setSelectedFile}
                 setFiles={setFiles}
-                onSelectionChange={() => {}}
+                onSelectionChange={setSelectedCode}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-zinc-500">
@@ -1529,6 +1539,7 @@ const handleFileClose = (fileId: string) => {
           />
           <AIChatPanel
             files={aiProjectFiles}
+            selectedCode={selectedCode}
             activeFile={
               selectedFile && loadedFileIds.includes(selectedFile.id)
                 ? selectedFile
