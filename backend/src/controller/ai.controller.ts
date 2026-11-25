@@ -10,6 +10,6 @@ export const generateAI = async (req: Request, res: Response) => {
     throw new ApiError(400, "VALIDATION_ERROR", getValidationMessage(parsed.error));
   }
 
-  const text = await generateAIResponse(parsed.data.prompt);
+  const text = await generateAIResponse(parsed.data);
   return res.status(200).json({ success: true, data: { text } });
 };
