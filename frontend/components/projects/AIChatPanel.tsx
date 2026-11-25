@@ -7,6 +7,7 @@ import {
   Bug,
   Code2,
   LoaderCircle,
+  ScanSearch,
   Send,
   Sparkles,
   WandSparkles,
@@ -758,16 +759,16 @@ export default function AIChatPanel({
       !codeToProcess.includes("\0"),
   );
   const codeActionFeedback = !activeFile
-    ? "Select a file to explain, debug, or refactor its code."
+    ? "Select a file to explain, debug, refactor, or review its code."
     : isSensitiveProjectFile(activeFile)
-      ? "Sensitive files cannot be sent for explanation, debugging, or refactoring."
+      ? "Sensitive files cannot be sent for explanation, debugging, refactoring, or review."
       : canProcessCode
         ? hasSelectedCode
-          ? "Selected code is ready to explain, debug, or refactor."
-          : "The active file is ready to explain, debug, or refactor."
+          ? "Selected code is ready to explain, debug, refactor, or review."
+          : "The active file is ready to explain, debug, refactor, or review."
         : codeToProcess.includes("\0")
           ? "Code containing null characters cannot be sent."
-          : "No code is available in this file to explain, debug, or refactor.";
+          : "No code is available in this file to explain, debug, refactor, or review.";
 
   const explainCode = () => {
     if (!activeFile || !canProcessCode || requestInFlightRef.current) return;
@@ -824,6 +825,33 @@ export default function AIChatPanel({
       requestActiveFile,
       true,
       `Refactor ${target}`,
+    );
+  };
+
+  const reviewCode = () => {
+    if (!activeFile || !canProcessCode || requestInFlightRef.current) return;
+
+    const requestActiveFile = {
+      ...activeFile,
+      content: codeToProcess,
+    };
+    const target = hasSelectedCode ? "selected code" : "the complete active file";
+    const request =
+      `Review ${target} in ${activeFile.path}. Evaluate correctness (potential bugs, incorrect assumptions, edge cases, and error handling), ` +
+      "security (input validation, unsafe operations, exposed secrets, and common security vulnerabilities), " +
+      "performance (unnecessary computations, inefficient loops, unnecessary allocations, and potential bottlenecks), " +
+      "and maintainability (readability, duplication, naming and structure, type safety, and project conventions). " +
+      "Organize findings under Critical, High, Medium, and Low severity levels. For each finding, include its severity, relevant function or code location when identifiable, " +
+      "a description of the problem, why it matters, and a practical recommendation. " +
+      "Prioritize actionable findings, avoid inventing issues or vulnerabilities, and distinguish confirmed issues from potential risks. " +
+      "Mention positive aspects where appropriate. Clearly state when no significant issues are found. " +
+      "This is analysis only: do not rewrite the code or automatically apply changes; avoid returning a full rewritten file unless necessary to explain a finding.";
+
+    void submitRequest(
+      request,
+      requestActiveFile,
+      true,
+      `Review ${hasSelectedCode ? "selected code" : "active file"}`,
     );
   };
 
@@ -981,6 +1009,16 @@ export default function AIChatPanel({
             >
               <WandSparkles aria-hidden="true" className="h-4 w-4" />
               Refactor Code
+            </button>
+            <button
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-sky-300/20 bg-sky-400/[0.08] px-3 text-sm font-medium text-sky-100 transition-colors hover:bg-sky-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isLoading || !canProcessCode}
+              onClick={reviewCode}
+              title={codeActionFeedback}
+              type="button"
+            >
+              <ScanSearch aria-hidden="true" className="h-4 w-4" />
+              AI Code Review
             </button>
             <button
               className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-teal-300/20 bg-teal-400/[0.08] px-3 text-sm font-medium text-teal-100 transition-colors hover:bg-teal-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
