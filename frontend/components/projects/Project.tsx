@@ -416,6 +416,27 @@ export default function ProjectWorkspace({
     );
   };
 
+  const handleApplyCode = (code: string) => {
+    if (!selectedFile) {
+      toast.error("Please select a file first");
+      return;
+    }
+
+    const fileId = selectedFile.id;
+
+    setSelectedFile((currentFile) =>
+      currentFile?.id === fileId
+        ? { ...currentFile, content: code }
+        : currentFile,
+    );
+    setFiles((currentFiles) =>
+      currentFiles.map((file) =>
+        file.id === fileId ? { ...file, content: code } : file,
+      ),
+    );
+    toast.success(`Code applied to ${selectedFile.name}`);
+  };
+
 const { mutate, isPending } = useUpdateProjectFile(
   projectId,
   selectedFile?.id ?? ""
@@ -1540,6 +1561,7 @@ const handleFileClose = (fileId: string) => {
           <AIChatPanel
             files={aiProjectFiles}
             selectedCode={selectedCode}
+            onApplyCode={handleApplyCode}
             activeFile={
               selectedFile && loadedFileIds.includes(selectedFile.id)
                 ? selectedFile

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { Code2, LoaderCircle, Send, Sparkles } from "lucide-react";
+import { ArrowDownToLine, Code2, LoaderCircle, Send, Sparkles } from "lucide-react";
 import { generateAIResponse, type AIRequestPayload } from "@/lib/ai.api";
+import { toast } from "sonner";
 
 type ChatMessage = {
   id: number;
@@ -26,6 +27,7 @@ type AIChatPanelProps = {
   files: AIProjectFile[];
   activeFile: ActiveProjectFile | null;
   selectedCode: string;
+  onApplyCode: (code: string) => void;
 };
 
 const FRIENDLY_ERROR =
@@ -227,7 +229,13 @@ const renderInlineMarkdown = (text: string): ReactNode[] => {
   });
 };
 
-function MarkdownResponse({ content }: { content: string }) {
+function MarkdownResponse({
+  content,
+  onApplyCode,
+}: {
+  content: string;
+  onApplyCode: (code: string) => void;
+}) {
   const lines = content.replace(/\r\n?/g, "\n").split("\n");
   const blocks: ReactNode[] = [];
   let index = 0;
@@ -248,17 +256,36 @@ function MarkdownResponse({ content }: { content: string }) {
         index += 1;
       }
       if (index < lines.length) index += 1;
+      const code = codeLines.join("\n");
 
       blocks.push(
         <div
           className="my-4 overflow-hidden rounded-xl border border-[#1b2732] bg-[#000102]"
           key={`code-${index}`}
         >
-          <div className="border-b border-[#1b2732] px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
-            {codeFence[1] || "code"}
+          <div className="flex items-center justify-between gap-3 border-b border-[#1b2732] px-3 py-2">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500">
+              {codeFence[1] || "code"}
+            </span>
+            <button
+              aria-label="Apply code to editor"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-teal-300/20 bg-teal-400/[0.08] px-2 py-1 text-[11px] font-medium text-teal-100 transition-colors hover:bg-teal-400/[0.14]"
+              onClick={() => {
+                if (!code.trim()) {
+                  toast.error("This code block is empty");
+                  return;
+                }
+                onApplyCode(code);
+              }}
+              title="Apply to Editor"
+              type="button"
+            >
+              <ArrowDownToLine aria-hidden="true" className="h-3.5 w-3.5" />
+              Apply to Editor
+            </button>
           </div>
           <pre className="overflow-x-auto p-4 text-xs leading-6 text-slate-200 sm:text-sm">
-            <code className="font-mono">{codeLines.join("\n")}</code>
+            <code className="font-mono">{code}</code>
           </pre>
         </div>,
       );
@@ -648,6 +675,7 @@ export default function AIChatPanel({
   files,
   activeFile,
   selectedCode,
+  onApplyCode,
 }: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -827,7 +855,10 @@ export default function AIChatPanel({
                     <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
                   </div>
                   <div className="min-w-0 flex-1 rounded-xl rounded-tl-sm border border-[#1b2732] bg-[#101820] px-4 py-3">
-                    <MarkdownResponse content={message.text} />
+                    <MarkdownResponse
+                      content={message.text}
+                      onApplyCode={onApplyCode}
+                    />
                   </div>
                 </div>
               )}
