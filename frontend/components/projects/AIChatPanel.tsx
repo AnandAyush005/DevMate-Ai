@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import {
   ArrowDownToLine,
+  Bug,
   Code2,
   LoaderCircle,
   Send,
@@ -757,16 +758,16 @@ export default function AIChatPanel({
       !codeToProcess.includes("\0"),
   );
   const codeActionFeedback = !activeFile
-    ? "Select a file to explain or refactor its code."
+    ? "Select a file to explain, debug, or refactor its code."
     : isSensitiveProjectFile(activeFile)
-      ? "Sensitive files cannot be sent for explanation or refactoring."
+      ? "Sensitive files cannot be sent for explanation, debugging, or refactoring."
       : canProcessCode
         ? hasSelectedCode
-          ? "Selected code is ready to explain or refactor."
-          : "The active file is ready to explain or refactor."
+          ? "Selected code is ready to explain, debug, or refactor."
+          : "The active file is ready to explain, debug, or refactor."
         : codeToProcess.includes("\0")
           ? "Code containing null characters cannot be sent."
-          : "No code is available in this file to explain or refactor.";
+          : "No code is available in this file to explain, debug, or refactor.";
 
   const explainCode = () => {
     if (!activeFile || !canProcessCode || requestInFlightRef.current) return;
@@ -781,6 +782,25 @@ export default function AIChatPanel({
       "dependencies and interactions with other project components, and important edge cases where relevant.";
 
     void submitRequest(request, requestActiveFile, true);
+  };
+
+  const debugCode = () => {
+    if (!activeFile || !canProcessCode || requestInFlightRef.current) return;
+
+    const requestActiveFile = {
+      ...activeFile,
+      content: codeToProcess,
+    };
+    const target = hasSelectedCode ? "selected code" : "the complete active file";
+    const request =
+      `Debug ${target}. Identify any syntax errors, runtime issues, and logical bugs. ` +
+      "For each identified issue, explain its root cause and distinguish confirmed problems from potential issues. " +
+      "Suggest minimal, targeted fixes that preserve existing functionality and follow project conventions. " +
+      "Avoid unnecessary dependencies and unrelated changes. " +
+      "When a correction is appropriate, briefly explain the important fixes and return the complete corrected code in a fenced code block. " +
+      "If no issue is found, clearly state that rather than inventing bugs.";
+
+    void submitRequest(request, requestActiveFile, true, `Debug ${target}`);
   };
 
   const refactorCode = () => {
@@ -941,6 +961,16 @@ export default function AIChatPanel({
             >
               <Sparkles aria-hidden="true" className="h-4 w-4" />
               Explain Code
+            </button>
+            <button
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-amber-300/20 bg-amber-400/[0.08] px-3 text-sm font-medium text-amber-100 transition-colors hover:bg-amber-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isLoading || !canProcessCode}
+              onClick={debugCode}
+              title={codeActionFeedback}
+              type="button"
+            >
+              <Bug aria-hidden="true" className="h-4 w-4" />
+              Debug Code
             </button>
             <button
               className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-fuchsia-300/20 bg-fuchsia-400/[0.08] px-3 text-sm font-medium text-fuchsia-100 transition-colors hover:bg-fuchsia-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
