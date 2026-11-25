@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { ArrowDownToLine, Code2, LoaderCircle, Send, Sparkles } from "lucide-react";
+import {
+  ArrowDownToLine,
+  Code2,
+  LoaderCircle,
+  Send,
+  Sparkles,
+  WandSparkles,
+} from "lucide-react";
 import { generateAIResponse, type AIRequestPayload } from "@/lib/ai.api";
 import { toast } from "sonner";
 
@@ -740,31 +747,33 @@ export default function AIChatPanel({
   };
 
   const hasSelectedCode = selectedCode.trim().length > 0;
-  const explanationCode = hasSelectedCode
+  const codeToProcess = hasSelectedCode
     ? selectedCode
     : activeFile?.content ?? "";
-  const canExplainCode = Boolean(
+  const canProcessCode = Boolean(
     activeFile &&
       !isSensitiveProjectFile(activeFile) &&
-      explanationCode.trim() &&
-      !explanationCode.includes("\0"),
+      codeToProcess.trim() &&
+      !codeToProcess.includes("\0"),
   );
-  const explainCodeFeedback = !activeFile
-    ? "Select a file to explain its code."
+  const codeActionFeedback = !activeFile
+    ? "Select a file to explain or refactor its code."
     : isSensitiveProjectFile(activeFile)
-      ? "Sensitive files cannot be sent for explanation."
-      : canExplainCode
+      ? "Sensitive files cannot be sent for explanation or refactoring."
+      : canProcessCode
         ? hasSelectedCode
-          ? "Explains the selected code."
-          : "Explains the full active file."
-        : "No code is available in this file.";
+          ? "Selected code is ready to explain or refactor."
+          : "The active file is ready to explain or refactor."
+        : codeToProcess.includes("\0")
+          ? "Code containing null characters cannot be sent."
+          : "No code is available in this file to explain or refactor.";
 
   const explainCode = () => {
-    if (!activeFile || !canExplainCode || requestInFlightRef.current) return;
+    if (!activeFile || !canProcessCode || requestInFlightRef.current) return;
 
     const requestActiveFile = {
       ...activeFile,
-      content: explanationCode,
+      content: codeToProcess,
     };
     const request =
       `Explain the ${hasSelectedCode ? "selected code" : "complete active file"}. ` +
@@ -772,6 +781,30 @@ export default function AIChatPanel({
       "dependencies and interactions with other project components, and important edge cases where relevant.";
 
     void submitRequest(request, requestActiveFile, true);
+  };
+
+  const refactorCode = () => {
+    if (!activeFile || !canProcessCode || requestInFlightRef.current) return;
+
+    const requestActiveFile = {
+      ...activeFile,
+      content: codeToProcess,
+    };
+    const target = hasSelectedCode ? "selected code" : "the complete active file";
+    const request =
+      `Refactor ${target} to improve readability and maintainability. ` +
+      "Simplify unnecessarily complex logic, improve naming where appropriate, " +
+      "and remove duplicated or redundant code only when safe. Follow existing project conventions. " +
+      "Preserve the original functionality and behavior, including required imports, exports, types, and interfaces. " +
+      "Do not introduce unnecessary dependencies or change unrelated functionality. " +
+      "Briefly explain the important changes, then return the complete refactored code in a fenced code block.";
+
+    void submitRequest(
+      request,
+      requestActiveFile,
+      true,
+      `Refactor ${target}`,
+    );
   };
 
   const hasProjectContext =
@@ -902,12 +935,22 @@ export default function AIChatPanel({
           <div className="flex flex-wrap items-center gap-2">
             <button
               className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-violet-300/20 bg-violet-400/[0.08] px-3 text-sm font-medium text-violet-100 transition-colors hover:bg-violet-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={isLoading || !canExplainCode}
+              disabled={isLoading || !canProcessCode}
               onClick={explainCode}
               type="button"
             >
               <Sparkles aria-hidden="true" className="h-4 w-4" />
               Explain Code
+            </button>
+            <button
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-fuchsia-300/20 bg-fuchsia-400/[0.08] px-3 text-sm font-medium text-fuchsia-100 transition-colors hover:bg-fuchsia-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isLoading || !canProcessCode}
+              onClick={refactorCode}
+              title={codeActionFeedback}
+              type="button"
+            >
+              <WandSparkles aria-hidden="true" className="h-4 w-4" />
+              Refactor Code
             </button>
             <button
               className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-teal-300/20 bg-teal-400/[0.08] px-3 text-sm font-medium text-teal-100 transition-colors hover:bg-teal-400/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
@@ -923,9 +966,9 @@ export default function AIChatPanel({
             aria-live="polite"
             className="text-right text-xs text-slate-600"
           >
-            {hasProjectContext
-              ? explainCodeFeedback
-              : "Project files are required to generate code."}
+            {!hasProjectContext
+              ? "Project files are required to generate code. " + codeActionFeedback
+              : codeActionFeedback}
           </p>
         </div>
         <div className="flex items-end gap-2 rounded-xl border border-[#1b2732] bg-[#000102] p-2 transition-colors focus-within:border-violet-300/50">
