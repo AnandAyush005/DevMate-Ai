@@ -7,11 +7,18 @@ export type GenerateAIResponse = {
   };
 };
 
+export type AIRequestPayload = {
+  request: string;
+  history: { role: "user" | "assistant"; text: string }[];
+  projectPaths: string[];
+  projectFiles: { path: string; content: string }[];
+};
+
 export const generateAIResponse = async (
-  prompt: string,
+  input: AIRequestPayload,
 ): Promise<GenerateAIResponse> => {
   const response = await api.post<GenerateAIResponse>("/ai/generate", {
-    prompt,
+    ...input,
   });
 
   return response.data;

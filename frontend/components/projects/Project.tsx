@@ -11,10 +11,18 @@ import {
   FilePlus,
   FolderKanban,
   FolderPlus,
+  LoaderCircle,
+  Play,
   Sparkles,
+  Terminal,
+  Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  executeCode,
+  type ExecuteCodeResponse,
+} from "@/lib/compiler.api";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +56,18 @@ import type { FileTreeNode } from "./FileTree";
 import CodeEditor from "./CodeEditor";
 import AIChatPanel, { type AIProjectFile } from "./AIChatPanel";
 import { getLanguageFromFileName } from "./language";
+
+const supportedExecutionLanguages = new Set([
+  "python",
+  "javascript",
+  "typescript",
+  "c",
+  "cpp",
+  "java",
+  "go",
+  "rust",
+  "php",
+]);
 
 type WorkspaceFile = {
   id: string;
@@ -109,13 +129,6 @@ export default function ProjectWorkspace({
   const rootFolderId = projectFolders.find(
     (folder: { id: string; path: string }) => folder.path === "/",
   )?.id;
-  const aiProjectFiles: AIProjectFile[] = (projectFiles ?? []).map(
-    (file: AIProjectFile) => ({
-      id: file.id,
-      name: file.name,
-      path: file.path,
-    }),
-  );
 
   const createFileMutation = useCreateProjectFile(projectId);
   const createFolderMutation = useCreateProjectFolder(projectId);
@@ -166,10 +179,33 @@ export default function ProjectWorkspace({
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [selectedFile, setSelectedFile] =
     useState<WorkspaceFile | null>(null);
+  const [selectedCode, setSelectedCode] = useState("");
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] =
+    useState<ExecuteCodeResponse["data"] | null>(null);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(true);
+  const [terminalPaneHeight, setTerminalPaneHeight] = useState(200);
   const [openFiles, setOpenFiles] = useState<string[]>([]);
   const [loadedFileIds, setLoadedFileIds] = useState<string[]>([]);
   const [pendingCloseFileId, setPendingCloseFileId] =
   useState<string | null>(null);
+
+  const aiProjectFiles: AIProjectFile[] = (projectFiles ?? []).map(
+    (file: AIProjectFile) => {
+      const workspaceFile = files.find(
+        (currentFile) => currentFile.id === file.id,
+      );
+      return {
+        id: file.id,
+        name: file.name,
+        path: file.path,
+        content:
+          workspaceFile && loadedFileIds.includes(file.id)
+            ? workspaceFile.content
+            : file.content,
+      };
+    },
+  );
 
   const startResize = (
     event: ReactPointerEvent<HTMLDivElement>,
@@ -252,6 +288,17 @@ export default function ProjectWorkspace({
     };
   };
 
+  const getTerminalPaneHeightBounds = (element: HTMLDivElement) => {
+    const sectionHeight = element.parentElement?.clientHeight ?? 800;
+    const maxSize = Math.max(120, Math.min(600, sectionHeight - 168));
+
+    return {
+      size: Math.min(terminalPaneHeight, maxSize),
+      minSize: 120,
+      maxSize,
+    };
+  };
+
   const hasUnsavedChanges = files.some(
     (file) =>
       savedContents[file.id] !== undefined &&
@@ -281,6 +328,7 @@ export default function ProjectWorkspace({
     if (projectFiles.length === 0) {
       setFiles([]);
       setSelectedFile(null);
+      setSelectedCode("");
       setOpenFiles([]);
       setLoadedFileIds([]);
       return;
@@ -356,6 +404,9 @@ export default function ProjectWorkspace({
 
     if (!existingFile) return;
 
+    if (selectedFile?.id !== existingFile.id) {
+      setSelectedCode("");
+    }
     setSelectedFile(existingFile);
 
     setOpenFiles((current) =>
@@ -363,6 +414,27 @@ export default function ProjectWorkspace({
         ? current
         : [...current, file.id]
     );
+  };
+
+  const handleApplyCode = (code: string) => {
+    if (!selectedFile) {
+      toast.error("Please select a file first");
+      return;
+    }
+
+    const fileId = selectedFile.id;
+
+    setSelectedFile((currentFile) =>
+      currentFile?.id === fileId
+        ? { ...currentFile, content: code }
+        : currentFile,
+    );
+    setFiles((currentFiles) =>
+      currentFiles.map((file) =>
+        file.id === fileId ? { ...file, content: code } : file,
+      ),
+    );
+    toast.success(`Code applied to ${selectedFile.name}`);
   };
 
 const { mutate, isPending } = useUpdateProjectFile(
@@ -396,6 +468,44 @@ const { mutate, isPending } = useUpdateProjectFile(
     });
   };
 
+  const handleRunCode = async () => {
+    if (!selectedFile) {
+      toast.error("Please select a file first");
+      return;
+    }
+
+    setIsTerminalOpen(true);
+
+    const language = getLanguageFromFileName(selectedFile.name);
+    if (!supportedExecutionLanguages.has(language)) {
+      toast.error(
+        `Code execution is not supported for "${selectedFile.name}". Choose a Python, JavaScript, TypeScript, C, C++, Java, Go, Rust, or PHP file.`,
+      );
+      return;
+    }
+
+    setIsExecuting(true);
+    setExecutionResult(null);
+
+    try {
+      const response = await executeCode({
+        code: selectedFile.content,
+        language,
+        stdin: "",
+      });
+      setExecutionResult(response.data);
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.error?.message ?? error.message
+        : error instanceof Error
+          ? error.message
+          : "Unknown error";
+      toast.error(`Code execution failed: ${message}`);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   
 
 const closeFileTab = (fileId: string) => {
@@ -409,6 +519,7 @@ const closeFileTab = (fileId: string) => {
       (file) => file.id === nextFileId
     );
 
+    setSelectedCode("");
     setSelectedFile(nextFile ?? null);
   }
 
@@ -576,6 +687,9 @@ const handleFileClose = (fileId: string) => {
         }
         return next;
       });
+      if (selectedFile && removedIds.has(selectedFile.id)) {
+        setSelectedCode("");
+      }
       setSelectedFile((current) =>
         current && removedIds.has(current.id) ? null : current,
       );
@@ -674,6 +788,7 @@ const handleFileClose = (fileId: string) => {
                 const exists = prev.some((f) => f.id === newFile.id);
                 return exists ? prev : [...prev, workspaceFile];
               });
+              setSelectedCode("");
               setSelectedFile(workspaceFile);
               setOpenFiles((prev) =>
                 prev.includes(newFile.id) ? prev : [...prev, newFile.id]
@@ -932,6 +1047,22 @@ const handleFileClose = (fileId: string) => {
         >
           {isPending ? "Saving..." : "Save"}
         </button>
+        <button
+          type="button"
+          onClick={handleRunCode}
+          disabled={!selectedFile || isExecuting}
+          className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#1b2732] bg-[#080d12] px-3 text-xs font-semibold text-slate-200 transition-colors hover:bg-[#141d27] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm"
+        >
+          {isExecuting ? (
+            <LoaderCircle
+              aria-hidden="true"
+              className="h-4 w-4 animate-spin"
+            />
+          ) : (
+            <Play aria-hidden="true" className="h-4 w-4" />
+          )}
+          {isExecuting ? "Running..." : "Run"}
+        </button>
 
         <button
           type="button"
@@ -1184,6 +1315,7 @@ const handleFileClose = (fileId: string) => {
                 selectedFile={selectedFile}
                 setSelectedFile={setSelectedFile}
                 setFiles={setFiles}
+                onSelectionChange={setSelectedCode}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-zinc-500">
@@ -1191,6 +1323,156 @@ const handleFileClose = (fileId: string) => {
               </div>
             )}
           </div>
+
+          {isTerminalOpen && (
+            <>
+              <div
+                aria-label="Resize terminal height"
+                aria-orientation="horizontal"
+                aria-valuemax={600}
+                aria-valuemin={120}
+                aria-valuenow={terminalPaneHeight}
+                className="h-2 shrink-0 cursor-row-resize touch-none bg-transparent transition-colors hover:bg-zinc-600/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400"
+                onKeyDown={(event) => {
+                  const bounds = getTerminalPaneHeightBounds(
+                    event.currentTarget,
+                  );
+                  resizeByKeyboard(
+                    event,
+                    "y",
+                    -1,
+                    bounds.size,
+                    bounds.minSize,
+                    bounds.maxSize,
+                    setTerminalPaneHeight,
+                  );
+                }}
+                onPointerCancel={endResize}
+                onPointerDown={(event) => {
+                  const bounds = getTerminalPaneHeightBounds(
+                    event.currentTarget,
+                  );
+                  startResize(
+                    event,
+                    "y",
+                    -1,
+                    bounds.size,
+                    bounds.minSize,
+                    bounds.maxSize,
+                    setTerminalPaneHeight,
+                  );
+                }}
+                onPointerMove={moveResize}
+                onPointerUp={endResize}
+                role="separator"
+                tabIndex={0}
+              />
+              <section
+                aria-label="Terminal output"
+                style={{ height: `${terminalPaneHeight}px` }}
+                className="flex min-h-[120px] max-h-[600px] shrink-0 flex-col border-t border-[#1b2732] bg-[#080d12]"
+              >
+                <div className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-[#1b2732] px-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Terminal
+                      aria-hidden="true"
+                      className="h-4 w-4 shrink-0 text-slate-400"
+                    />
+                    <span className="text-xs font-semibold text-slate-200">
+                      Terminal
+                    </span>
+                    <span
+                      className={`truncate text-xs ${
+                        isExecuting
+                          ? "text-violet-300"
+                          : executionResult?.error
+                            ? "text-red-300"
+                            : "text-slate-500"
+                      }`}
+                    >
+                      {isExecuting
+                        ? "Running"
+                        : executionResult?.status || "Ready"}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setExecutionResult(null)}
+                      className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200"
+                      aria-label="Clear terminal output"
+                      title="Clear output"
+                    >
+                      <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Clear</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsTerminalOpen(false)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200"
+                      aria-label="Close terminal"
+                      title="Close terminal"
+                    >
+                      <X aria-hidden="true" className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                  {isExecuting ? (
+                    <div
+                      className="flex h-full items-center justify-center gap-2 text-sm text-slate-400"
+                      role="status"
+                    >
+                      <LoaderCircle
+                        aria-hidden="true"
+                        className="h-4 w-4 animate-spin text-violet-300"
+                      />
+                      Executing code...
+                    </div>
+                  ) : executionResult ? (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+                        <span>
+                          Exit code: {executionResult.exit_code ?? "—"}
+                        </span>
+                        <span>Time: {executionResult.time}</span>
+                        <span>Memory: {executionResult.memory}</span>
+                      </div>
+                      <div
+                        className={`grid grid-cols-1 gap-3 ${
+                          executionResult.error ? "sm:grid-cols-2" : ""
+                        }`}
+                      >
+                        <section className="min-w-0 space-y-1">
+                          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                            Output
+                          </h3>
+                          <pre className="min-h-8 whitespace-pre-wrap break-words rounded-md border border-[#1b2732] bg-[#0b1117] p-2 font-mono text-xs leading-relaxed text-slate-200">
+                            {executionResult.output || "No output."}
+                          </pre>
+                        </section>
+                        {executionResult.error && (
+                          <section className="min-w-0 space-y-1">
+                            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-300">
+                              Errors
+                            </h3>
+                            <pre className="min-h-8 whitespace-pre-wrap break-words rounded-md border border-red-950/70 bg-red-950/20 p-2 font-mono text-xs leading-relaxed text-red-200">
+                              {executionResult.error}
+                            </pre>
+                          </section>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                      Run your code to see the output here.
+                    </div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
         </section>
         <div
           aria-hidden={!isAIChatOpen}
@@ -1277,8 +1559,9 @@ const handleFileClose = (fileId: string) => {
             tabIndex={0}
           />
           <AIChatPanel
-            projectId={projectId}
             files={aiProjectFiles}
+            selectedCode={selectedCode}
+            onApplyCode={handleApplyCode}
             activeFile={
               selectedFile && loadedFileIds.includes(selectedFile.id)
                 ? selectedFile
